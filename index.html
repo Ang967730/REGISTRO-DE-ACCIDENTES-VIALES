@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro de siniestros viales</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+
+  <!-- Encabezado -->
+  <header>
+    <img src="fondo-tuxtla.jpg" alt="Fondo de Tuxtla" class="fondo">
+    <div class="logo">
+      <img src="logo-smyt.png" alt="Logo Secretaría de Movilidad y Transporte">
+    </div>
+    <div class="titulo">
+      <h1>Registro de siniestros viales</h1>
+      <p>Estado de Chiapas · Secretaría de Movilidad y Transporte</p>
+    </div>
+  </header>
+
+  <!-- Menú de navegación -->
+  <nav class="menu">
+    <button onclick="mostrarSeccion('inicio')">Inicio</button>
+    <button onclick="mostrarSeccion('registro')">Registro de incidentes</button>
+    <button onclick="mostrarSeccion('mapaSeccion')">Mapa de incidentes</button>
+    <a href="https://lookerstudio.google.com/reporting/8a562e1b-3a87-4ec8-ad65-7df290914d34" target="_blank">
+  <button>Estadísticas</button>
+</a>
+
+  </nav>
+  
+  <!-- Sección Inicio -->
+  <section id="inicio" class="seccion visible" style="background: linear-gradient(to bottom right, #f7f9fc, #e2ecf9);">
+    <div class="tarjetas">
+      <div class="tarjeta">
+        <h3>📋 Registro</h3>
+        <p>Captura datos detallados de los siniestros viales, incluyendo fecha, causa y ubicación.</p>
+      </div>
+      <div class="tarjeta">
+        <h3>🗺️ Mapa</h3>
+        <p>Visualiza zonas con mayor concentración de incidentes mediante un mapa interactivo.</p>
+      </div>
+      <div class="tarjeta">
+        <h3>📊 Estadísticas</h3>
+        <p>Consulta gráficas y análisis visual para la toma de decisiones basadas en datos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Registro -->
+  <section id="registro" class="seccion">
+    <h2>📋 Registro de siniestros viales</h2>
+    <form id="formIncidente" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+      <label>✉️ Correo Electrónico
+        <input type="email" name="Correo_Electronico" required>
+      </label>
+
+      <label>📅 Fecha del siniestro
+        <input type="date" name="Fecha_del_siniestro" required>
+      </label>
+
+      <label>🚗 Tipo de siniestro
+        <select name="Tipo_de_siniestro" required>
+          <option value="">-- Selecciona --</option>
+          <option>Choque</option>
+          <option>Atropello</option>
+          <option>Volcadura</option>
+          <option>Caída</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>💥 Causa del siniestro
+        <select name="Causa_del_siniestro">
+          <option value="">-- Selecciona --</option>
+          <option>Exceso de velocidad</option>
+          <option>Conducción bajo efectos del alcohol o drogas</option>
+          <option>Distracción al volante</option>
+          <option>Fatiga o somnolencia del conductor</option>
+          <option>Fallas mecánicas</option>
+          <option>Condiciones climáticas adversas</option>
+          <option>Mal estado de la infraestructura</option>
+          <option>Diseño vial inadecuado</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>🚦 Tipo de vialidad
+        <select name="Tipo_de_vialidad">
+          <option value="">-- Selecciona --</option>
+          <option>Avenida</option>
+          <option>Boulevard</option>
+          <option>Calle</option>
+          <option>Calzada</option>
+          <option>Carretera</option>
+          <option>Libramiento</option>
+          <option>Privada</option>
+        </select>
+      </label>
+
+      <label>👤 Usuario involucrado (1)
+        <select name="Usuario_involucrado (1)">
+          <option value="">-- Selecciona --</option>
+          <option>Peatón</option>
+          <option>Ciclista</option>
+          <option>Motociclista</option>
+          <option>Chofer de transporte público</option>
+          <option>Automovilista</option>
+          <option>Chofer de vehículo pesado</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>👥 Usuario involucrado (2)
+        <select name="Usuario_involucrado (2)">
+          <option value="">-- Selecciona --</option>
+          <option>Peatón</option>
+          <option>Ciclista</option>
+          <option>Motociclista</option>
+          <option>Chofer de transporte público</option>
+          <option>Automovilista</option>
+          <option>Chofer de vehículo pesado</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>📊 Total de usuarios involucrados
+        <input type="number" name="Total_de_usuarios_involucrados" min="1">
+      </label>
+
+      <label>⚰️ Total de fallecidos
+        <input type="number" name="Total_de_fallecidos" min="0">
+      </label>
+
+      <label>🧾 Clasificación de fallecidos
+        <select name="Clasificacion_de_usuarios_fallecidos">
+          <option value="">-- Selecciona --</option>
+          <option>Peatón</option>
+          <option>Ciclista</option>
+          <option>Motociclista</option>
+          <option>Chofer de transporte público</option>
+          <option>Automovilista</option>
+          <option>Chofer de vehículo pesado</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>🏘️ Dirección
+        <input type="text" name="Direccion" id="direccion" readonly>
+      </label>
+
+      <label>🌐 Coordenadas Geográficas
+        <input type="text" name="Coordenadas_Geograficas" id="coordenadas" readonly>
+      </label>
+
+      <label style="grid-column: 1 / -1;">🗺️ Mapa de localización
+        <div id="mapa" style="height: 300px; border: 1px solid #ccc; border-radius: 4px;"></div>
+      </label>
+
+      <label style="grid-column: 1 / -1;">🔗 Link de la noticia
+        <input type="url" name="Link_de_la_noticia">
+      </label>
+
+      <label style="grid-column: 1 / -1;">📝 Descripción de la noticia
+        <textarea name="Descripcion_de_la_noticia" rows="4"></textarea>
+      </label>
+
+      <button type="submit">✅ Enviar</button>
+      <span id="respuesta"></span>
+    </form>
+  </section>
+
+  <!-- Sección Mapa de incidentes -->
+  <section id="mapaSeccion" class="seccion">
+    <h2>🗺️ Mapa de incidentes</h2>
+    <div id="mapaIncidentes"></div>
+  </section>
+
+  <!-- Sección Estadísticas -->
+  <section id="estadisticas" class="seccion">
+    <h2>📊 Estadísticas</h2>
+    <p>Próximamente se mostrarán gráficos y análisis visual aquí.</p>
+  </section>
+
+  <!-- Pie de página -->
+  <footer>
+    <p>
+      <a href="https://www.facebook.com/share/16mbEXWtoj/?mibextid=wwXIfr" target="_blank">
+        <img src="facebook-icon.png" alt="Facebook" class="icono-facebook">
+        Síguenos en Facebook: Secretaría de Movilidad y Transporte
+      </a>
+    </p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
