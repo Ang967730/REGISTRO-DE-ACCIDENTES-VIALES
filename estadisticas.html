@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estadísticas Avanzadas - Siniestros Viales</title>
+  <title>Estadísticas Avanzadas - Siniestros Viales Chiapas</title>
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="estadisticas.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -18,7 +18,7 @@
       <img src="logo-smyt.png" alt="Logo Secretaría de Movilidad y Transporte">
     </div>
     <div class="titulo">
-      <h1>Estadísticas Avanzadas</h1>
+      <h1>📊 Estadísticas Avanzadas</h1>
       <p>Estado de Chiapas · Secretaría de Movilidad y Transporte</p>
       <p class="estrategia-nacional">Estrategia Nacional de Movilidad y Seguridad Vial</p>
     </div>
@@ -70,39 +70,40 @@
       </div>
     </section>
 
-
-<!-- Selector de Municipio Global -->
-<section class="filtro-municipio-global">
-  <div class="filtro-municipio-header">
-    <h3>
-      <i class="fas fa-map-marker-alt"></i> 
-      Filtrar por Municipio
-    </h3>
-    <p class="filtro-municipio-descripcion">
-      Selecciona un municipio para filtrar todas las gráficas y estadísticas
-    </p>
-  </div>
-  
-  <div id="municipioFilterContainer" class="municipio-filter-container">
-    <div class="selector-wrapper">
-      <label for="filtroMunicipio">
-        <i class="fas fa-city"></i> Municipio:
-      </label>
-      <select id="filtroMunicipio" onchange="cambiarFiltroMunicipio()" class="municipio-selector">
-        <option value="">Cargando municipios...</option>
-      </select>
-    </div>
-    
-    <div class="filtro-stats">
-      <div class="stat-mini">
-        <i class="fas fa-database"></i>
-        <span>Datos cargando...</span>
+    <!-- Selector de Municipio Global Mejorado -->
+    <section class="filtro-municipio-global">
+      <div class="filtro-municipio-header">
+        <h3>
+          <i class="fas fa-map-marker-alt"></i> 
+          Filtrar por Municipio
+        </h3>
+        <p class="filtro-municipio-descripcion">
+          Selecciona un municipio para filtrar todas las gráficas y estadísticas del dashboard
+        </p>
       </div>
-    </div>
-  </div>
-</section>
-
-
+      
+      <div id="municipioFilterContainer" class="municipio-filter-container">
+        <div class="selector-wrapper">
+          <label for="filtroMunicipio">
+            <i class="fas fa-city"></i> Municipio:
+          </label>
+          <select id="filtroMunicipio" onchange="cambiarFiltroMunicipio()" class="municipio-selector">
+            <option value="">Todos los municipios</option>
+          </select>
+        </div>
+        
+        <button class="btn-clear-municipio" onclick="limpiarFiltroMunicipio()" style="display: none;">
+          <i class="fas fa-times-circle"></i> Quitar Filtro
+        </button>
+      </div>
+      
+      <div class="filtro-stats">
+        <div class="stat-mini">
+          <i class="fas fa-database"></i>
+          <span>Cargando estadísticas...</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Panel 1: Análisis Temporal y Geoespacial -->
     <section class="analytics-panel">
@@ -151,15 +152,6 @@
             <canvas id="chartMunicipios"></canvas>
           </div>
         </div>
-
-        <!-- Lista de Zonas Peligrosas -->
-        <div class="danger-zones-section">
-          <h4><i class="fas fa-exclamation-triangle"></i> Top 5  Zonas Más Peligrosas</h4>
-          <div id="zonasPeligrosasContainer">
-            <p class="loading-text">Analizando datos geoespaciales...</p>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- Panel 2: Perfil de Siniestros -->
@@ -225,37 +217,33 @@
         </div>
 
         <!-- Gráficas principales -->
-<!-- ==========================
-     GRÁFICAS PRINCIPALES
-     ========================== -->
-<div class="charts-container same-size-charts">
-  <div class="chart-card" id="cardTiposSiniestro">
-    <h4><i class="fas fa-car-crash"></i> Tipos de Siniestro</h4>
-    <canvas id="chartTiposSiniestro"></canvas>
-  </div>
-  <div class="chart-card" id="cardCausas">
-    <h4><i class="fas fa-search"></i> Causas Principales</h4>
-    <canvas id="chartCausas"></canvas>
-  </div>
-</div>
+        <div class="charts-container">
+          <div class="chart-card interactive" id="cardTiposSiniestro">
+            <h4><i class="fas fa-car-crash"></i> Tipos de Siniestro</h4>
+            <canvas id="chartTiposSiniestro"></canvas>
+          </div>
+          <div class="chart-card interactive" id="cardCausas">
+            <h4><i class="fas fa-search"></i> Causas Principales</h4>
+            <canvas id="chartCausas"></canvas>
+          </div>
+        </div>
 
-<!-- ==========================
-     GRÁFICAS ADICIONALES
-     ========================== -->
-<div class="charts-container-perfil">
-  <div class="chart-card interactive">
-    <h4><i class="fas fa-user-friends"></i> Personas Involucradas</h4>
-    <canvas id="chartPersonasInvolucradas"></canvas>
-  </div>
-  <div class="chart-card interactive">
-    <h4><i class="fas fa-users"></i> Clasificación de Fallecidos</h4>
-    <canvas id="chartClasificacionFallecidos"></canvas>
-  </div>
- <div class="chart-card interactive">
-    <h4><i class="fas fa-road"></i> Tipos de Vialidad</h4>
-    <canvas id="chartTiposVialidad"></canvas>
-  </div>
-</div>
+        <!-- Gráficas adicionales -->
+        <div class="charts-container-perfil">
+          <div class="chart-card">
+            <h4><i class="fas fa-user-friends"></i> Personas Involucradas</h4>
+            <canvas id="chartPersonasInvolucradas"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4><i class="fas fa-users"></i> Clasificación de Fallecidos</h4>
+            <canvas id="chartClasificacionFallecidos"></canvas>
+          </div>
+          <div class="chart-card interactive">
+            <h4><i class="fas fa-road"></i> Tipos de Vialidad</h4>
+            <canvas id="chartTiposVialidad"></canvas>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Panel 3: Análisis Cruzado -->
@@ -292,6 +280,142 @@
       </div>
     </section>
 
+    <!-- Panel 4: Análisis de Transporte Público -->
+    <section class="analytics-panel">
+      <button class="analytics-toggle" onclick="togglePanel('transporte')">
+        <span><i class="fas fa-bus"></i> Análisis de Transporte Público</span>
+        <i class="fas fa-chevron-down" id="transporteToggleIcon"></i>
+      </button>
+      <div class="analytics-content" id="transporteContent" style="display: none;">
+        
+        <!-- Vista General del Transporte Público -->
+        <div id="vistaGeneralTransporte">
+          
+          <!-- Métricas Generales -->
+          <div class="transport-overview-header">
+            <h3><i class="fas fa-chart-pie"></i> Panorama General del Transporte Público</h3>
+            <p class="transport-overview-description">Análisis comparativo de todos los tipos de transporte público en Chiapas</p>
+          </div>
+          
+          <div class="transport-metrics-grid">
+            <div class="transport-metric-card">
+              <div class="transport-metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div class="transport-metric-value" id="generalTotalIncidentes">0</div>
+              <div class="transport-metric-label">Total de Incidentes</div>
+              <div class="transport-metric-sublabel">Transporte público</div>
+            </div>
+            <div class="transport-metric-card">
+              <div class="transport-metric-icon"><i class="fas fa-skull"></i></div>
+              <div class="transport-metric-value" id="generalTotalFallecidos">0</div>
+              <div class="transport-metric-label">Total de Fallecidos</div>
+              <div class="transport-metric-sublabel">En transporte público</div>
+            </div>
+            <div class="transport-metric-card">
+              <div class="transport-metric-icon"><i class="fas fa-percentage"></i></div>
+              <div class="transport-metric-value" id="generalTasaLetalidad">0%</div>
+              <div class="transport-metric-label">Tasa de Letalidad</div>
+              <div class="transport-metric-sublabel">Fallecidos/Incidentes</div>
+            </div>
+            <div class="transport-metric-card">
+              <div class="transport-metric-icon"><i class="fas fa-chart-line"></i></div>
+              <div class="transport-metric-value" id="generalPorcentajeTotal">0%</div>
+              <div class="transport-metric-label">Del Total General</div>
+              <div class="transport-metric-sublabel">Todos los accidentes</div>
+            </div>
+          </div>
+          
+          <!-- Gráficas Generales -->
+          <div class="transport-charts-container">
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-balance-scale"></i> Comparación entre Tipos de Transporte</h4>
+              <canvas id="chartComparacionTipos"></canvas>
+            </div>
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-heartbeat"></i> Distribución de Gravedad</h4>
+              <canvas id="chartGravedadGeneral"></canvas>
+            </div>
+          </div>
+          
+          <div class="transport-charts-container">
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-chart-line"></i> Evolución Temporal por Tipo</h4>
+              <canvas id="chartEvolucionTemporal"></canvas>
+            </div>
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-calendar-week"></i> Días de la Semana más Peligrosos</h4>
+              <canvas id="chartDiasSemanaTransporte"></canvas>
+            </div>
+          </div>
+          
+          <div class="transport-charts-container">
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-road"></i> Tipo de Vialidad vs Tipo de Transporte</h4>
+              <canvas id="chartVialidadTransporte"></canvas>
+            </div>
+            <div class="transport-chart-card">
+              <h4><i class="fas fa-map-marked-alt"></i> Top 10 Municipios (Transporte Público)</h4>
+              <canvas id="chartMunicipiosTransporte"></canvas>
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- Selector de Tipo de Transporte -->
+        <div class="transport-type-filter">
+          <div class="transport-header">
+            <h4><i class="fas fa-filter"></i> Análisis Detallado por Tipo de Transporte</h4>
+            <p class="transport-description">Selecciona un tipo para ver estadísticas específicas y detalladas</p>
+          </div>
+          
+          <div class="transport-selector-grid">
+            <label class="transport-card-selector" onclick="cambiarTransporteFiltro('colectivo')">
+              <input type="radio" name="transportePublicoFiltro" value="colectivo" id="radioColectivo">
+              <div class="transport-card-content">
+                <div class="transport-icon">🚌</div>
+                <div class="transport-title">Colectivos</div>
+                <div class="transport-count" id="countColectivos">0</div>
+                <div class="transport-label">incidentes registrados</div>
+              </div>
+            </label>
+            
+            <label class="transport-card-selector" onclick="cambiarTransporteFiltro('taxi')">
+              <input type="radio" name="transportePublicoFiltro" value="taxi" id="radioTaxi">
+              <div class="transport-card-content">
+                <div class="transport-icon">🚕</div>
+                <div class="transport-title">Taxis</div>
+                <div class="transport-count" id="countTaxis">0</div>
+                <div class="transport-label">incidentes registrados</div>
+              </div>
+            </label>
+            
+            <label class="transport-card-selector" onclick="cambiarTransporteFiltro('mototaxi')">
+              <input type="radio" name="transportePublicoFiltro" value="mototaxi" id="radioMototaxi">
+              <div class="transport-card-content">
+                <div class="transport-icon">🛵</div>
+                <div class="transport-title">Mototaxis</div>
+                <div class="transport-count" id="countMototaxis">0</div>
+                <div class="transport-label">incidentes registrados</div>
+              </div>
+            </label>
+          </div>
+          
+          <button id="btnLimpiarTransporte" class="btn-limpiar-transporte" onclick="limpiarFiltroTransporte()" style="display: none;">
+            <i class="fas fa-times-circle"></i> Volver a Vista General
+          </button>
+        </div>
+
+        <!-- Contenedor Dinámico de Estadísticas Específicas -->
+        <div id="transporteStatsContainer">
+          <div class="transport-empty-state">
+            <i class="fas fa-hand-pointer" style="font-size: 5em; color: #90caf9; margin-bottom: 25px;"></i>
+            <p style="color: #666; font-size: 20px; font-weight: 700;">Selecciona un tipo de transporte para ver análisis detallado</p>
+            <p style="color: #999; font-size: 16px; margin-top: 12px;">Haz clic en una de las tarjetas de arriba</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- Pie de página -->
@@ -300,14 +424,16 @@
       <div class="footer-section">
         <h4>Secretaría de Movilidad y Transporte</h4>
         <p>Estado de Chiapas, México</p>
+        <p style="margin-top: 10px; font-size: 14px; color: #999;">
+        </p>
       </div>
       <div class="footer-section">
         <h4>Síguenos en redes sociales</h4>
         <div class="social-links">
-          <a href="https://www.facebook.com/share/16mbEXWtoj/?mibextid=wwXIfr" target="_blank">
+          <a href="https://www.facebook.com/share/16mbEXWtoj/?mibextid=wwXIfr" target="_blank" rel="noopener">
             <img src="facebook-icon.png" alt="Facebook" class="icono-facebook">
           </a>
-          <a href="https://www.instagram.com/smyt_chiapas?igsh=MTdteHo3d2NlNmY3cA==" target="_blank">
+          <a href="https://www.instagram.com/smyt_chiapas?igsh=MTdteHo3d2NlNmY3cA==" target="_blank" rel="noopener">
             <img src="instagram-icon.png" alt="Instagram" class="icono-instagram">
           </a>
         </div>
