@@ -1,12 +1,12 @@
 /* ============================================================
    ESTADISTICAS.JS - SISTEMA DE ANÁLISIS AVANZADO INTERACTIVO
-   Versión final con distribución temporal interactiva
+   Versión Premium Optimizada y Mejorada
    ============================================================ */
 
 // ============================================================
 // CONFIGURACIÓN GLOBAL
 // ============================================================
-const MAIN_API_URL = "https://script.google.com/macros/s/AKfycbzLTG8Zo1ayJMapz6rHXK0mUrnLhs6Ar0uk_06DBqhxww0fySCUgZa_u0yubKCbV1deJA/exec";
+const MAIN_API_URL = "https://script.google.com/macros/s/AKfycbyh_f5b6vcLB3_mSQPke9pLtXYrTYJF4mwJnc88CBNDyjrmSNtSfrmOMv5YRoDb7eBS/exec";
 
 let allIncidentsData = [];
 let charts = {};
@@ -18,11 +18,14 @@ let filtrosActivos = {
   causaSiniestro: null,
   tipoVialidad: null,
   temporal: null,
-   municipio: null
+  municipio: null
 };
 
-// Mapeo de índices de columnas (según Apps Script)
+// ============================================================
+// MAPEO DE ÍNDICES DE COLUMNAS
+// ============================================================
 const COLUMNAS = {
+  // Información del Registro (0-6)
   MUNICIPIO: 0,
   FECHA_SINIESTRO: 1,
   DEPENDENCIA: 2,
@@ -30,38 +33,82 @@ const COLUMNAS = {
   CORREO: 4,
   FUENTE_NOTICIA: 5,
   LINK_NOTICIA: 6,
+  
+  // Datos del Siniestro (7-10)
   TIPO_SINIESTRO: 7,
   CAUSA_SINIESTRO: 8,
   USUARIO_1: 9,
   USUARIO_2: 10,
-  TIPO_TRANSPORTE: 11,
-  CONCESIONADO: 12,
-  NO_ECONOMICO: 13,
-  CONCESION: 14,
-  MODALIDAD: 15,
-  PLACA: 16,
-  MARCA: 17,
-  TIPO: 18,
-  MOTOR: 19,
-  SERIE: 20,
-  MODELO: 21,
-  TOTAL_USUARIOS: 22,
-  TOTAL_FALLECIDOS: 23,
-  CLASIFICACION_FALLECIDOS: 24,
-  TIPO_VIALIDAD: 25,
-  DIRECCION: 26,
-  COORDENADAS: 27,
-  ESTATUS_HECHOS: 28,
-  SEGUIMIENTO: 29,
-  DESCRIPCION: 30
+  
+  // Tipo de Transporte Público (11)
+  TIPO_TRANSPORTE_PUBLICO: 11,
+  
+  // COLECTIVOS (12-18)
+  COLECTIVO_NUMERO: 12,
+  COLECTIVO_RUTA: 13,
+  COLECTIVO_MANIOBRA: 14,
+  COLECTIVO_CONDUCTOR: 15,
+  COLECTIVO_ESTADO: 16,
+  COLECTIVO_PASAJEROS: 17,
+  COLECTIVO_GRAVEDAD: 18,
+  
+  // TAXIS (19-29)
+  TAXI_NUMERO: 19,
+  TAXI_TIPO: 20,
+  TAXI_SITIO_BASE: 21,
+  TAXI_OTRO_SITIO: 22,
+  TAXI_COLOR: 23,
+  TAXI_OTRO_COLOR: 24,
+  TAXI_PASAJEROS: 25,
+  TAXI_NUMERO_PASAJEROS: 26,
+  TAXI_MANIOBRA: 27,
+  TAXI_CONDUCTOR: 28,
+  TAXI_ESTADO: 29,
+  
+  // MOTOTAXIS (30-35)
+  MOTOTAXI_NUMERO: 30,
+  MOTOTAXI_PASAJEROS: 31,
+  MOTOTAXI_NUMERO_PASAJEROS: 32,
+  MOTOTAXI_MANIOBRA: 33,
+  MOTOTAXI_CONDUCTOR: 34,
+  MOTOTAXI_ESTADO: 35,
+  
+  // Estadísticas (36-40)
+  TOTAL_USUARIOS: 36,
+  TOTAL_HERIDOS: 37,
+  CLASIFICACION_HERIDOS: 38,
+  TOTAL_FALLECIDOS: 39,
+  CLASIFICACION_FALLECIDOS: 40,
+  
+  // Ubicación (41-43)
+  TIPO_VIALIDAD: 41,
+  DIRECCION: 42,
+  COORDENADAS: 43,
+  
+  // Seguimiento (44-46)
+  ESTATUS_HECHOS: 44,
+  SEGUIMIENTO: 45,
+  DESCRIPCION: 46,
+  
+  // Fotografías Cloudinary (47-49)
+  NUM_FOTOGRAFIAS: 47,
+  NOMBRES_ARCHIVOS: 48,
+  URLS_FOTOGRAFIAS: 49,
+  
+  // Metadata (50-52)
+  ID_REGISTRO: 50,
+  TIMESTAMP: 51,
+  ESTADO: 52
 };
 
 // ============================================================
-// SISTEMA DE FILTROS CRUZADOS INTERACTIVOS
+// SISTEMA DE FILTROS CRUZADOS INTERACTIVOS MEJORADO
 // ============================================================
 function aplicarFiltroCruzado(tipoFiltro, valor, nombreCompleto = null) {
+  console.log(`🔍 Aplicando filtro cruzado: ${tipoFiltro} = ${valor}`);
+  
   // Limpiar otros filtros del mismo tipo
-  if (tipoFiltro !== 'temporal') {
+  if (tipoFiltro !== 'temporal' && tipoFiltro !== 'municipio') {
     filtrosActivos.tipoSiniestro = null;
     filtrosActivos.causaSiniestro = null;
     filtrosActivos.tipoVialidad = null;
@@ -77,29 +124,46 @@ function aplicarFiltroCruzado(tipoFiltro, valor, nombreCompleto = null) {
   actualizarDashboardConFiltros();
   
   // Notificación
-  mostrarNotificacion(`Filtro aplicado: ${nombreCompleto || valor}`, 'info', 3000);
+  mostrarNotificacion(`✅ Filtro aplicado: ${nombreCompleto || valor}`, 'success', 3000);
 }
 
 function limpiarFiltrosCruzados() {
+  console.log('🧹 Limpiando todos los filtros cruzados');
+  
   filtrosActivos.tipoSiniestro = null;
   filtrosActivos.causaSiniestro = null;
   filtrosActivos.tipoVialidad = null;
-  filtrosActivos.municipio = null;  // ⭐ AGREGAR ESTA LÍNEA
+  filtrosActivos.municipio = null;
   
-  // ⭐ NUEVO: Resetear el selector de municipio
+  // Resetear el selector de municipio
   const selector = document.getElementById('filtroMunicipio');
   if (selector) {
     selector.value = '';
+    selector.removeAttribute('data-filtered');
+  }
+  
+  // Resetear UI del selector
+  const selectorWrapper = document.querySelector('.selector-wrapper');
+  if (selectorWrapper) {
+    selectorWrapper.classList.remove('active');
+  }
+  
+  // Ocultar botón de limpiar municipio
+  const btnClear = document.querySelector('.btn-clear-municipio');
+  if (btnClear) {
+    btnClear.style.display = 'none';
   }
   
   // Ocultar indicador
   const indicador = document.getElementById('filtrosCruzadosIndicador');
   if (indicador) indicador.style.display = 'none';
   
-  // Actualizar dashboard
+  // Actualizar estadísticas y dashboard
+  actualizarEstadisticasFiltro();
+  actualizarResumenGeneral();
   actualizarDashboardConFiltros();
   
-  mostrarNotificacion('Filtros eliminados - Mostrando todos los datos', 'success', 3000);
+  mostrarNotificacion('✅ Filtros eliminados - Mostrando todos los datos', 'success', 3000);
 }
 
 function mostrarIndicadorFiltroCruzado(tipoFiltro, valor) {
@@ -111,7 +175,7 @@ function mostrarIndicadorFiltroCruzado(tipoFiltro, valor) {
     indicador.id = 'filtrosCruzadosIndicador';
     indicador.className = 'filtros-cruzados-indicador';
     
-    // Buscar dónde insertarlo (después del filtro temporal si existe)
+    // Buscar dónde insertarlo
     const filtroTemporal = document.getElementById('filtroActivoIndicador');
     const container = filtroTemporal ? 
       filtroTemporal.parentElement : 
@@ -125,14 +189,22 @@ function mostrarIndicadorFiltroCruzado(tipoFiltro, valor) {
   const tipoNombres = {
     tipoSiniestro: 'Tipo de Siniestro',
     causaSiniestro: 'Causa',
-    tipoVialidad: 'Tipo de Vialidad'
+    tipoVialidad: 'Tipo de Vialidad',
+    municipio: 'Municipio'
+  };
+  
+  const iconos = {
+    tipoSiniestro: 'fa-car-crash',
+    causaSiniestro: 'fa-search',
+    tipoVialidad: 'fa-road',
+    municipio: 'fa-map-marker-alt'
   };
   
   indicador.innerHTML = `
-    <i class="fas fa-filter"></i>
+    <i class="fas ${iconos[tipoFiltro]}"></i>
     <span>Filtrando por ${tipoNombres[tipoFiltro]}: <strong>${valor}</strong></span>
     <button onclick="limpiarFiltrosCruzados()" class="btn-limpiar-filtro-cruzado">
-      <i class="fas fa-times"></i> Limpiar
+      <i class="fas fa-times"></i> Quitar Filtro
     </button>
   `;
   
@@ -140,10 +212,11 @@ function mostrarIndicadorFiltroCruzado(tipoFiltro, valor) {
 }
 
 function actualizarDashboardConFiltros() {
-  // ⭐ Actualizar TODOS los paneles
+  console.log('📊 Actualizando dashboard con filtros aplicados');
+  
   actualizarPerfilSiniestros();
-  actualizarAnalisisTemporal();  // NUEVO
-  inicializarAnalisisCruzado();   // NUEVO
+  actualizarAnalisisTemporal();
+  inicializarAnalisisCruzado();
   
   // Actualizar título de la sección temporal
   actualizarTituloSeccionPerfil();
@@ -155,12 +228,15 @@ function actualizarTituloSeccionPerfil() {
   
   const hayFiltrosCruzados = filtrosActivos.tipoSiniestro || 
                             filtrosActivos.causaSiniestro || 
-                            filtrosActivos.tipoVialidad;
+                            filtrosActivos.tipoVialidad ||
+                            filtrosActivos.municipio;
   
   let textoTitulo = 'Distribución Temporal de Incidentes';
   
   if (hayFiltrosCruzados) {
-    if (filtrosActivos.tipoSiniestro) {
+    if (filtrosActivos.municipio) {
+      textoTitulo += ` - ${filtrosActivos.municipio}`;
+    } else if (filtrosActivos.tipoSiniestro) {
       textoTitulo += ` - ${filtrosActivos.tipoSiniestro}`;
     } else if (filtrosActivos.causaSiniestro) {
       textoTitulo += ` - ${filtrosActivos.causaSiniestro}`;
@@ -173,7 +249,7 @@ function actualizarTituloSeccionPerfil() {
 }
 
 // ============================================================
-// SISTEMA DE FILTRADO TEMPORAL (MEJORADO)
+// SISTEMA DE FILTRADO TEMPORAL MEJORADO
 // ============================================================
 function obtenerDatosFiltrados() {
   let datos = allIncidentsData;
@@ -212,7 +288,7 @@ function obtenerDatosFiltrados() {
     });
   }
   
-  // ⭐ NUEVO: Aplicar filtro de municipio
+  // Aplicar filtro de municipio
   if (filtrosActivos.municipio) {
     datos = datos.filter(row => 
       (row[COLUMNAS.MUNICIPIO] || 'Desconocido') === filtrosActivos.municipio
@@ -242,6 +318,8 @@ function obtenerDatosFiltrados() {
 }
 
 function aplicarFiltroTemporal(periodo, clave, label) {
+  console.log(`📅 Aplicando filtro temporal: ${label}`);
+  
   filtroTemporalActivo = { periodo, clave, label };
   
   document.getElementById('filtroActivoIndicador').style.display = 'flex';
@@ -249,17 +327,19 @@ function aplicarFiltroTemporal(periodo, clave, label) {
   document.getElementById('btnLimpiarFiltro').style.display = 'flex';
   
   actualizarGraficasPerfil();
-  mostrarNotificacion(`Filtro aplicado: ${label}`, 'info', 3000);
+  mostrarNotificacion(`📅 Filtro aplicado: ${label}`, 'info', 3000);
 }
 
 function limpiarFiltroTemporal() {
+  console.log('🧹 Limpiando filtro temporal');
+  
   filtroTemporalActivo = null;
   
   document.getElementById('filtroActivoIndicador').style.display = 'none';
   document.getElementById('btnLimpiarFiltro').style.display = 'none';
   
   actualizarGraficasPerfil();
-  mostrarNotificacion('Filtro eliminado - Mostrando todos los datos', 'success', 3000);
+  mostrarNotificacion('✅ Filtro temporal eliminado', 'success', 2000);
 }
 
 function actualizarGraficasPerfil() {
@@ -270,9 +350,75 @@ function actualizarGraficasPerfil() {
   crearGraficasTiposVialidad();
 }
 
-window.limpiarFiltroTemporal = limpiarFiltroTemporal;
-window.limpiarFiltrosCruzados = limpiarFiltrosCruzados;
-window.aplicarFiltroCruzado = aplicarFiltroCruzado;
+// ============================================================
+// SISTEMA DE FILTRADO DE MUNICIPIO MEJORADO
+// ============================================================
+function cambiarFiltroMunicipio() {
+  const selector = document.getElementById('filtroMunicipio');
+  if (!selector) return;
+  
+  const municipio = selector.value;
+  const selectorWrapper = document.querySelector('.selector-wrapper');
+  const btnClear = document.querySelector('.btn-clear-municipio');
+  
+  if (municipio === '') {
+    // Limpiar filtro
+    limpiarFiltroMunicipio();
+  } else {
+    // Aplicar filtro
+    filtrosActivos.municipio = municipio;
+    
+    // Actualizar UI
+    if (selectorWrapper) selectorWrapper.classList.add('active');
+    if (btnClear) btnClear.style.display = 'flex';
+    selector.setAttribute('data-filtered', 'true');
+    
+    // Mostrar indicador mejorado
+    mostrarIndicadorFiltroCruzado('municipio', municipio);
+    
+    // Actualizar dashboard
+    actualizarEstadisticasFiltro();
+    actualizarResumenGeneral();
+    actualizarDashboardConFiltros();
+    
+    mostrarNotificacion(`✅ Filtrado por: ${municipio}`, 'success', 3000);
+  }
+}
+
+function limpiarFiltroMunicipio() {
+  console.log('🧹 Limpiando filtro de municipio');
+  
+  const selector = document.getElementById('filtroMunicipio');
+  const selectorWrapper = document.querySelector('.selector-wrapper');
+  const btnClear = document.querySelector('.btn-clear-municipio');
+  
+  filtrosActivos.municipio = null;
+  
+  // Actualizar UI
+  if (selector) {
+    selector.value = '';
+    selector.removeAttribute('data-filtered');
+  }
+  if (selectorWrapper) selectorWrapper.classList.remove('active');
+  if (btnClear) btnClear.style.display = 'none';
+  
+  // Ocultar indicador de filtros cruzados si no hay otros filtros
+  const hayOtrosFiltros = filtrosActivos.tipoSiniestro || 
+                          filtrosActivos.causaSiniestro || 
+                          filtrosActivos.tipoVialidad;
+  
+  if (!hayOtrosFiltros) {
+    const indicador = document.getElementById('filtrosCruzadosIndicador');
+    if (indicador) indicador.style.display = 'none';
+  }
+  
+  // Actualizar todo el dashboard
+  actualizarEstadisticasFiltro();
+  actualizarResumenGeneral();
+  actualizarDashboardConFiltros();
+  
+  mostrarNotificacion('✅ Mostrando todos los municipios', 'info', 2500);
+}
 
 // ============================================================
 // CLASE: ANALIZADOR TEMPORAL
@@ -370,8 +516,8 @@ function validarCoordenadas(coordStr) {
   
   // Límites expandidos para cubrir todo el estado de Chiapas
   if (isNaN(lat) || isNaN(lng) || 
-      lat < 14.2 || lat > 17.8 ||     // Latitud: desde la frontera con Guatemala hasta Tabasco
-      lng < -94.8 || lng > -90.2) {   // Longitud: desde Oaxaca/Veracruz hasta Guatemala
+      lat < 14.2 || lat > 17.8 ||
+      lng < -94.8 || lng > -90.2) {
     return null;
   }
   
@@ -393,13 +539,11 @@ function calcularDistanciaKm(coords1, coords2) {
 function analizarVialidadesCluster(incidentes) {
   const vialidades = {};
   
-  // Contar tipos de vialidad en el cluster
   incidentes.forEach(incidente => {
     const vialidad = incidente[COLUMNAS.TIPO_VIALIDAD] || 'No especificada';
     vialidades[vialidad] = (vialidades[vialidad] || 0) + 1;
   });
   
-  // Ordenar por frecuencia
   const vialidadesOrdenadas = Object.entries(vialidades)
     .sort((a, b) => b[1] - a[1]);
   
@@ -419,7 +563,7 @@ function analizarVialidadesCluster(incidentes) {
     porcentaje: parseInt(porcentaje),
     cantidad: cantidad,
     total: incidentes.length,
-    todas: vialidadesOrdenadas.slice(0, 3) // Top 3 vialidades
+    todas: vialidadesOrdenadas.slice(0, 3)
   };
 }
 
@@ -429,7 +573,6 @@ function identificarZonasPeligrosas() {
   const minimoIncidentes = 3;
   const procesados = new Set();
   
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   datosFiltrados.forEach((incident, idx) => {
@@ -459,8 +602,6 @@ function identificarZonasPeligrosas() {
         sum + parseInt(inc[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
       );
       cluster.municipio = cluster.incidentes[0][COLUMNAS.MUNICIPIO] || 'Desconocido';
-      
-      // Analizar vialidades del cluster
       cluster.vialidadInfo = analizarVialidadesCluster(cluster.incidentes);
       
       clusters.push(cluster);
@@ -523,16 +664,29 @@ function contarPersonasInvolucradas(datos) {
 }
 
 // ============================================================
-// NOTIFICACIONES
+// NOTIFICACIONES MEJORADAS
 // ============================================================
 function mostrarNotificacion(mensaje, tipo = 'info', duracion = 5000) {
   const notification = document.createElement('div');
   notification.className = `notification ${tipo}`;
+  
+  const iconos = {
+    success: '✅',
+    error: '❌',
+    info: 'ℹ️',
+    warning: '⚠️'
+  };
+  
   notification.innerHTML = `
-    <div>${mensaje}</div>
-    <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 1.3em;">${iconos[tipo]}</span>
+      <span>${mensaje}</span>
+    </div>
+    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
   `;
+  
   document.body.appendChild(notification);
+  
   setTimeout(() => {
     if (document.body.contains(notification)) {
       notification.style.opacity = '0';
@@ -576,14 +730,13 @@ async function cargarDatos() {
     
     const data = await response.json();
     
-    console.log('=== DEBUG DATOS RECIBIDOS ===');
+    console.log('=== 📊 DEBUG DATOS RECIBIDOS ===');
     console.log('Total registros:', data.length);
     
     allIncidentsData = data.filter(row => validarCoordenadas(row[COLUMNAS.COORDENADAS]) !== null);
     
     console.log(`✅ Datos cargados: ${allIncidentsData.length} incidentes válidos`);
     
-    // ⭐ AGREGAR ESTA LÍNEA
     generarSelectorMunicipios();
     actualizarEstadisticasFiltro();
     
@@ -592,22 +745,96 @@ async function cargarDatos() {
     actualizarPerfilSiniestros();
     inicializarAnalisisCruzado();
     
+    // Inicializar transporte público
+    setTimeout(() => {
+      inicializarTransportePublico();
+    }, 500);
+    
     ocultarProgreso();
-    mostrarNotificacion(`✅ ${allIncidentsData.length} incidentes cargados correctamente`, 'success', 3000);
+    mostrarNotificacion(` ${allIncidentsData.length} incidentes cargados correctamente`, 'success', 3000);
     
   } catch (error) {
-    console.error('Error al cargar datos:', error);
+    console.error(' Error al cargar datos:', error);
     ocultarProgreso();
-    mostrarNotificacion('❌ Error al cargar los datos. Reintentando...', 'error');
+    mostrarNotificacion(' Error al cargar los datos. Reintentando...', 'error');
     setTimeout(cargarDatos, 3000);
   }
 }
 
 // ============================================================
-// RESUMEN GENERAL (CORREGIDO)
+// SELECTOR DE MUNICIPIOS MEJORADO
+// ============================================================
+function generarSelectorMunicipios() {
+  const municipios = {};
+  
+  allIncidentsData.forEach(row => {
+    const municipio = row[COLUMNAS.MUNICIPIO] || 'Desconocido';
+    municipios[municipio] = (municipios[municipio] || 0) + 1;
+  });
+  
+  const municipiosOrdenados = Object.entries(municipios)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  
+  const selector = document.getElementById('filtroMunicipio');
+  if (!selector) {
+    console.warn('⚠️ No se encontró el elemento filtroMunicipio');
+    return;
+  }
+  
+  selector.innerHTML = '<option value="">Todos los municipios</option>';
+  
+  municipiosOrdenados.forEach(([municipio, cantidad]) => {
+    const option = document.createElement('option');
+    option.value = municipio;
+    option.textContent = `${municipio} (${cantidad})`;
+    selector.appendChild(option);
+  });
+  
+  console.log(`✅ ${municipiosOrdenados.length} municipios cargados en el selector`);
+}
+
+function actualizarEstadisticasFiltro() {
+  const statsContainer = document.querySelector('.filtro-stats');
+  if (!statsContainer) return;
+  
+  const datosFiltrados = obtenerDatosFiltrados();
+  const totalIncidentes = datosFiltrados.length;
+  const totalFallecidos = datosFiltrados.reduce((sum, row) => 
+    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
+  );
+  
+  if (filtrosActivos.municipio) {
+    statsContainer.innerHTML = `
+      <div class="stat-mini">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>${totalIncidentes} incidentes en este municipio</span>
+      </div>
+      <div class="stat-mini">
+        <i class="fas fa-skull"></i>
+        <span>${totalFallecidos} fallecidos registrados</span>
+      </div>
+    `;
+  } else {
+    statsContainer.innerHTML = `
+      <div class="stat-mini">
+        <i class="fas fa-database"></i>
+        <span>${allIncidentsData.length} incidentes totales</span>
+      </div>
+    `;
+  }
+}
+
+// Exponer funciones globalmente
+window.cambiarFiltroMunicipio = cambiarFiltroMunicipio;
+window.limpiarFiltroMunicipio = limpiarFiltroMunicipio;
+window.limpiarFiltroTemporal = limpiarFiltroTemporal;
+window.limpiarFiltrosCruzados = limpiarFiltrosCruzados;
+window.aplicarFiltroCruzado = aplicarFiltroCruzado;
+
+// ============================================================
+// RESUMEN GENERAL
 // ============================================================
 function actualizarResumenGeneral() {
-  // ⭐ Usar datos filtrados si hay filtro de municipio
   const datosParaResumen = filtrosActivos.municipio ? obtenerDatosFiltrados() : allIncidentsData;
   
   const totalIncidentes = datosParaResumen.length;
@@ -623,13 +850,12 @@ function actualizarResumenGeneral() {
   document.getElementById('totalInvolucrados').textContent = totalInvolucrados.toLocaleString();
   document.getElementById('tasaLetalidadGeneral').textContent = tasaLetalidad + '%';
   
-  // ⭐ NUEVO: Agregar indicador visual si hay filtro
   const resumenSection = document.querySelector('.resumen-general h2');
   if (resumenSection && filtrosActivos.municipio) {
     resumenSection.innerHTML = `
       <i class="fas fa-chart-bar"></i> 
       Resumen General 
-      <span style="font-size: 0.6em; color: #4caf50; margin-left: 10px;">
+      <span style="font-size: 0.55em; color: #4caf50; margin-left: 10px; padding: 8px 16px; background: rgba(76, 175, 80, 0.1); border-radius: 20px;">
         📍 ${filtrosActivos.municipio}
       </span>
     `;
@@ -639,10 +865,9 @@ function actualizarResumenGeneral() {
 }
 
 // ============================================================
-// ANÁLISIS TEMPORAL Y GEOESPACIAL (ACTUALIZADO CON FILTROS)
+// ANÁLISIS TEMPORAL Y GEOESPACIAL
 // ============================================================
 function actualizarAnalisisTemporal() {
-  // ⭐ CAMBIO: Usar datos filtrados en lugar de todos los datos
   const datosFiltrados = obtenerDatosFiltrados();
   const analizador = new AnalizadorTemporal(datosFiltrados);
   
@@ -686,82 +911,14 @@ function actualizarAnalisisTemporal() {
     document.getElementById('tendenciaDetalle').textContent = `${signo}${tendencia.porcentajeCambio}% (${tendencia.mesesAnalizados} meses)`;
   }
   
-  actualizarListaZonasPeligrosas(zonas);
+  // ELIMINADO: actualizarListaZonasPeligrosas(zonas);
   crearGraficaDias(analizador);
   crearGraficaMunicipios();
 }
 
-function actualizarListaZonasPeligrosas(zonas) {
-  const container = document.getElementById('zonasPeligrosasContainer');
-  if (!container) return;
-  
-  if (zonas.length === 0) {
-    container.innerHTML = '<p class="empty-state">No se identificaron zonas peligrosas.</p>';
-    return;
-  }
-  
-  // Diversificar por municipio - máximo 2 zonas por municipio
-  const zonasDiversificadas = [];
-  const municipiosVistos = {};
-  
-  for (const zona of zonas) {
-    const municipio = zona.municipio;
-    
-    if (!municipiosVistos[municipio]) {
-      municipiosVistos[municipio] = 0;
-    }
-    
-    if (municipiosVistos[municipio] < 2 && zonasDiversificadas.length < 5) {
-      zonasDiversificadas.push(zona);
-      municipiosVistos[municipio]++;
-    }
-    
-    if (zonasDiversificadas.length >= 5) break;
-  }
-  
-  const colorBadge = {
-    'Crítica': '#8B0000',
-    'Alta': '#DC143C',
-    'Media': '#FF8C00',
-    'Baja': '#FFD700'
-  };
-  
-  container.innerHTML = zonasDiversificadas.map((zona, index) => `
-    <div class="danger-zone-item-enhanced">
-      <div class="zone-rank">#${index + 1}</div>
-      <div class="zone-info-detailed">
-        <div class="zone-header">
-          <span class="zone-municipio">${zona.municipio}</span>
-          <span class="zone-badge" style="background: ${colorBadge[zona.peligrosidad]};">${zona.peligrosidad}</span>
-        </div>
-        
-        <!-- Nueva sección de vialidad -->
-        <div class="zone-vialidad">
-          <span class="vialidad-label">
-            <i class="fas fa-road"></i> 
-            ${zona.vialidadInfo.principal}
-          </span>
-          <span class="vialidad-percentage">${zona.vialidadInfo.porcentaje}%</span>
-        </div>
-        
-        <div class="zone-stats">
-          <span><i class="fas fa-exclamation-circle"></i> ${zona.incidentes.length} incidentes</span>
-          <span><i class="fas fa-skull"></i> ${zona.totalFallecidos} fallecidos</span>
-        </div>
-        
-        <!-- Información adicional expandible -->
-        <div class="zone-details">
-          <small class="zone-vialidad-detail">
-            ${zona.vialidadInfo.cantidad}/${zona.vialidadInfo.total} incidentes en este tipo de vialidad
-          </small>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
 
 // ============================================================
-// PERFIL DE SINIESTROS (CORREGIDO)
+// PERFIL DE SINIESTROS
 // ============================================================
 function actualizarPerfilSiniestros() {
   const datosFiltrados = obtenerDatosFiltrados();
@@ -770,7 +927,6 @@ function actualizarPerfilSiniestros() {
     sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
   );
   
-  // Usar la misma lógica para contar involucrados
   const { total: totalInvolucrados } = contarPersonasInvolucradas(datosFiltrados);
   
   const promedioInvolucrados = datosFiltrados.length > 0 ? (totalInvolucrados / datosFiltrados.length).toFixed(1) : 0;
@@ -779,14 +935,6 @@ function actualizarPerfilSiniestros() {
   document.getElementById('totalFallecidos').textContent = totalFallecidos;
   document.getElementById('promedioInvolucrados').textContent = promedioInvolucrados;
   document.getElementById('tasaLetalidad').textContent = tasaLetalidad + '%';
-  
-  // Debug para verificar consistencia
-  console.log('=== VERIFICACIÓN PERFIL SINIESTROS ===');
-  console.log('Datos filtrados:', datosFiltrados.length, 'incidentes');
-  console.log('Total involucrados (Perfil):', totalInvolucrados);
-  console.log('Total fallecidos (Perfil):', totalFallecidos);
-  console.log('Promedio involucrados por incidente:', promedioInvolucrados);
-  console.log('Tasa de letalidad:', tasaLetalidad + '%');
   
   // Causa principal
   const causas = {};
@@ -813,7 +961,7 @@ function actualizarPerfilSiniestros() {
 }
 
 // ============================================================
-// DISTRIBUCIÓN TEMPORAL (INTERACTIVA Y MEJORADA)
+// DISTRIBUCIÓN TEMPORAL
 // ============================================================
 function crearDistribucionTemporal() {
   actualizarDistribucionTemporal();
@@ -828,12 +976,10 @@ function actualizarDistribucionTemporal() {
   
   if (charts.distribucionTemporal) charts.distribucionTemporal.destroy();
   
-  // Detectar si hay filtros cruzados activos
   const hayFiltrosCruzados = filtrosActivos.tipoSiniestro || 
                             filtrosActivos.causaSiniestro || 
                             filtrosActivos.tipoVialidad;
   
-  // Título dinámico según filtros activos
   let tituloGrafica = 'Distribución Temporal de Incidentes';
   if (hayFiltrosCruzados) {
     if (filtrosActivos.tipoSiniestro) {
@@ -854,37 +1000,43 @@ function actualizarDistribucionTemporal() {
           label: 'Total de Accidentes',
           data: datosAgrupados.accidentes,
           borderColor: hayFiltrosCruzados ? '#1976d2' : '#1976d2',
-          backgroundColor: hayFiltrosCruzados ? 'rgba(25, 118, 210, 0.15)' : 'rgba(25, 118, 210, 0.1)',
+          backgroundColor: hayFiltrosCruzados ? 'rgba(25, 118, 210, 0.2)' : 'rgba(25, 118, 210, 0.1)',
           borderWidth: hayFiltrosCruzados ? 4 : 3,
           fill: true,
           tension: 0.4,
           pointRadius: hayFiltrosCruzados ? 6 : 5,
-          pointHoverRadius: hayFiltrosCruzados ? 8 : 7,
-          pointBackgroundColor: hayFiltrosCruzados ? '#1976d2' : '#1976d2'
+          pointHoverRadius: hayFiltrosCruzados ? 9 : 8,
+          pointBackgroundColor: hayFiltrosCruzados ? '#1976d2' : '#1976d2',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
         },
         {
           label: 'Total de Fallecidos',
           data: datosAgrupados.fallecidos,
           borderColor: hayFiltrosCruzados ? '#f44336' : '#f44336',
-          backgroundColor: hayFiltrosCruzados ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.1)',
+          backgroundColor: hayFiltrosCruzados ? 'rgba(244, 67, 54, 0.2)' : 'rgba(244, 67, 54, 0.1)',
           borderWidth: hayFiltrosCruzados ? 4 : 3,
           fill: true,
           tension: 0.4,
           pointRadius: hayFiltrosCruzados ? 6 : 5,
-          pointHoverRadius: hayFiltrosCruzados ? 8 : 7,
-          pointBackgroundColor: hayFiltrosCruzados ? '#f44336' : '#f44336'
+          pointHoverRadius: hayFiltrosCruzados ? 9 : 8,
+          pointBackgroundColor: hayFiltrosCruzados ? '#f44336' : '#f44336',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
         },
         {
           label: 'Total de Usuarios Involucrados',
           data: datosAgrupados.involucrados,
           borderColor: hayFiltrosCruzados ? '#4caf50' : '#4caf50',
-          backgroundColor: hayFiltrosCruzados ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.1)',
+          backgroundColor: hayFiltrosCruzados ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)',
           borderWidth: hayFiltrosCruzados ? 4 : 3,
           fill: true,
           tension: 0.4,
           pointRadius: hayFiltrosCruzados ? 6 : 5,
-          pointHoverRadius: hayFiltrosCruzados ? 8 : 7,
-          pointBackgroundColor: hayFiltrosCruzados ? '#4caf50' : '#4caf50'
+          pointHoverRadius: hayFiltrosCruzados ? 9 : 8,
+          pointBackgroundColor: hayFiltrosCruzados ? '#4caf50' : '#4caf50',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
         }
       ]
     },
@@ -904,24 +1056,26 @@ function actualizarDistribucionTemporal() {
           position: 'top',
           labels: {
             usePointStyle: true,
-            padding: 15,
-            font: { size: 12, weight: '600' }
+            padding: 18,
+            font: { size: 13, weight: '700' }
           }
         },
         title: {
           display: hayFiltrosCruzados,
           text: hayFiltrosCruzados ? `Filtrado: ${tituloGrafica.split(' - ')[1]}` : '',
-          font: { size: 14, weight: 'bold' },
+          font: { size: 15, weight: 'bold' },
           color: '#1976d2',
-          padding: { bottom: 10 }
+          padding: { bottom: 15 }
         },
         tooltip: {
           mode: 'index',
           intersect: false,
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
-          titleFont: { size: 14, weight: 'bold' },
-          bodyFont: { size: 13 },
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             label: function(context) {
               let label = context.dataset.label || '';
@@ -936,7 +1090,7 @@ function actualizarDistribucionTemporal() {
               return '';
             },
             footer: function() {
-              return 'Haz clic en un punto para filtrar temporalmente';
+              return '💡 Haz clic en un punto para filtrar temporalmente';
             }
           }
         }
@@ -944,11 +1098,21 @@ function actualizarDistribucionTemporal() {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: { precision: 0, font: { size: 11 } },
-          grid: { color: 'rgba(0,0,0,0.05)' }
+          ticks: { 
+            precision: 0, 
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
         },
         x: {
-          ticks: { font: { size: 11 } },
+          ticks: { 
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
           grid: { display: false }
         }
       },
@@ -959,21 +1123,11 @@ function actualizarDistribucionTemporal() {
       }
     }
   });
-  
-  // Debug para verificar datos filtrados
-  console.log('=== DISTRIBUCIÓN TEMPORAL ===');
-  console.log('Período:', periodo);
-  console.log('Filtros cruzados activos:', hayFiltrosCruzados);
-  console.log('Datos agrupados:', datosAgrupados);
-  if (hayFiltrosCruzados) {
-    console.log('Filtros activos:', filtrosActivos);
-  }
 }
 
 function agruparDatosPorPeriodo(periodo) {
   const grupos = {};
   
-  // CAMBIO PRINCIPAL: Usar datos filtrados en lugar de todos los datos
   const datosFiltrados = obtenerDatosFiltrados();
   
   datosFiltrados.forEach(row => {
@@ -1009,7 +1163,6 @@ function agruparDatosPorPeriodo(periodo) {
     grupos[clave].accidentes++;
     grupos[clave].fallecidos += parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0);
     
-    // MEJORADO: Usar el mismo conteo que las otras gráficas
     const usuario1 = row[COLUMNAS.USUARIO_1]?.trim();
     const usuario2 = row[COLUMNAS.USUARIO_2]?.trim();
     
@@ -1043,11 +1196,12 @@ function agruparDatosPorPeriodo(periodo) {
   };
 }
 
+window.actualizarDistribucionTemporal = actualizarDistribucionTemporal;
+
 // ============================================================
-// GRÁFICAS INTERACTIVAS
+// GRÁFICAS INTERACTIVAS MEJORADAS
 // ============================================================
 
-// PERSONAS INVOLUCRADAS
 function crearGraficaPersonasInvolucradas() {
   const ctx = document.getElementById('chartPersonasInvolucradas');
   if (!ctx) return;
@@ -1093,23 +1247,24 @@ function crearGraficaPersonasInvolucradas() {
   if (charts.personasInvolucradas) charts.personasInvolucradas.destroy();
   
   charts.personasInvolucradas = new Chart(ctx, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: categorias,
       datasets: [{
         label: 'Número de Personas',
         data: datos,
         backgroundColor: [
-          'rgba(25, 118, 210, 0.8)',
-          'rgba(244, 67, 54, 0.8)',
-          'rgba(76, 175, 80, 0.8)',
-          'rgba(255, 152, 0, 0.8)',
-          'rgba(156, 39, 176, 0.8)',
-          'rgba(255, 193, 7, 0.8)',
-          'rgba(158, 158, 158, 0.8)'
+          'rgba(25, 118, 210, 0.85)',
+          'rgba(244, 67, 54, 0.85)',
+          'rgba(76, 175, 80, 0.85)',
+          'rgba(255, 152, 0, 0.85)',
+          'rgba(156, 39, 176, 0.85)',
+          'rgba(255, 193, 7, 0.85)',
+          'rgba(158, 158, 158, 0.85)'
         ],
         borderColor: '#ffffff',
-        borderWidth: 3
+        borderWidth: 4,
+        hoverOffset: 15
       }]
     },
     options: {
@@ -1119,8 +1274,8 @@ function crearGraficaPersonasInvolucradas() {
         legend: {
           position: 'right',
           labels: {
-            padding: 15,
-            font: { size: 12, weight: '600' },
+            padding: 18,
+            font: { size: 13, weight: '700' },
             generateLabels: function(chart) {
               const data = chart.data;
               if (data.labels.length && data.datasets.length) {
@@ -1138,8 +1293,12 @@ function crearGraficaPersonasInvolucradas() {
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             label: function(context) {
               const value = context.parsed;
@@ -1150,17 +1309,16 @@ function crearGraficaPersonasInvolucradas() {
         },
         title: {
           display: true,
-          text: `Total: ${total.toLocaleString()} personas`,
-          font: { size: 14, weight: 'bold' },
+          text: `Total: ${total.toLocaleString()} personas involucradas`,
+          font: { size: 15, weight: 'bold' },
           color: '#1976d2',
-          padding: { bottom: 15 }
+          padding: { bottom: 18 }
         }
       }
     }
   });
 }
 
-// TIPOS DE SINIESTRO - INTERACTIVA
 function crearGraficaTiposSiniestro() {
   const ctx = document.getElementById('chartTiposSiniestro');
   if (!ctx) return;
@@ -1176,6 +1334,24 @@ function crearGraficaTiposSiniestro() {
   const sortedTipos = Object.entries(tipos).sort((a, b) => b[1] - a[1]);
   if (charts.tiposSiniestro) charts.tiposSiniestro.destroy();
   
+  const colores = [
+    'rgba(255, 99, 132, 0.85)',
+    'rgba(54, 162, 235, 0.85)', 
+    'rgba(255, 206, 86, 0.85)',
+    'rgba(75, 192, 192, 0.85)',
+    'rgba(153, 102, 255, 0.85)',
+    'rgba(255, 159, 64, 0.85)'
+  ];
+  
+  const coloresBorde = [
+    'rgba(255, 99, 132, 1)',
+    'rgba(54, 162, 235, 1)',
+    'rgba(255, 206, 86, 1)', 
+    'rgba(75, 192, 192, 1)',
+    'rgba(153, 102, 255, 1)',
+    'rgba(255, 159, 64, 1)'
+  ];
+  
   charts.tiposSiniestro = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -1185,29 +1361,18 @@ function crearGraficaTiposSiniestro() {
         data: sortedTipos.map(t => t[1]),
         backgroundColor: sortedTipos.map((_, index) => 
           filtrosActivos.tipoSiniestro === sortedTipos[index][0] ? 
-          'rgba(25, 118, 210, 0.8)' :
-          [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)', 
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)'
-          ][index % 6]
+          'rgba(25, 118, 210, 0.85)' : colores[index % 6]
         ),
         borderColor: sortedTipos.map((_, index) => 
           filtrosActivos.tipoSiniestro === sortedTipos[index][0] ? 
-          'rgba(25, 118, 210, 1)' :
-          [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)', 
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)'
-          ][index % 6]
+          'rgba(25, 118, 210, 1)' : coloresBorde[index % 6]
         ),
-        borderWidth: 2
+        borderWidth: 3,
+        borderRadius: 8,
+        hoverBackgroundColor: sortedTipos.map((_, index) => 
+          filtrosActivos.tipoSiniestro === sortedTipos[index][0] ? 
+          'rgba(25, 118, 210, 1)' : colores[index % 6].replace('0.85', '1')
+        )
       }]
     },
     options: {
@@ -1229,8 +1394,12 @@ function crearGraficaTiposSiniestro() {
       plugins: { 
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             title: function(context) {
               return context[0].label;
@@ -1241,7 +1410,7 @@ function crearGraficaTiposSiniestro() {
               return `${context.parsed.x} incidentes (${porcentaje}%)`;
             },
             footer: function() {
-              return 'Haz clic para filtrar';
+              return '💡 Haz clic para filtrar';
             }
           }
         }
@@ -1249,24 +1418,33 @@ function crearGraficaTiposSiniestro() {
       scales: {
         x: { 
           beginAtZero: true,
-          ticks: { precision: 0 }
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
         },
         y: {
           ticks: { 
-            font: { size: 11 },
+            font: { size: 12, weight: '600' },
             maxRotation: 0,
+            color: '#666',
             callback: function(value, index) {
               const label = this.getLabelForValue(value);
               return label.length > 25 ? label.substring(0, 22) + '...' : label;
             }
-          }
+          },
+          grid: { display: false }
         }
       }
     }
   });
 }
 
-// CAUSAS PRINCIPALES - INTERACTIVA
 function crearGraficasCausas() {
   const ctx = document.getElementById('chartCausas');
   if (!ctx) return;
@@ -1284,6 +1462,28 @@ function crearGraficasCausas() {
   
   if (charts.causas) charts.causas.destroy();
   
+  const colores = [
+    'rgba(255, 99, 132, 0.85)',
+    'rgba(54, 162, 235, 0.85)',
+    'rgba(255, 206, 86, 0.85)',
+    'rgba(75, 192, 192, 0.85)',
+    'rgba(153, 102, 255, 0.85)',
+    'rgba(255, 159, 64, 0.85)',
+    'rgba(199, 199, 199, 0.85)',
+    'rgba(83, 102, 255, 0.85)'
+  ];
+  
+  const coloresBorde = [
+    'rgba(255, 99, 132, 1)',
+    'rgba(54, 162, 235, 1)',
+    'rgba(255, 206, 86, 1)',
+    'rgba(75, 192, 192, 1)',
+    'rgba(153, 102, 255, 1)',
+    'rgba(255, 159, 64, 1)',
+    'rgba(199, 199, 199, 1)',
+    'rgba(83, 102, 255, 1)'
+  ];
+  
   charts.causas = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -1293,33 +1493,18 @@ function crearGraficasCausas() {
         data: sortedCausas.map(c => c[1]),
         backgroundColor: sortedCausas.map((item, index) => 
           filtrosActivos.causaSiniestro === item[0] ? 
-          'rgba(25, 118, 210, 0.8)' :
-          [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)',
-            'rgba(199, 199, 199, 0.8)',
-            'rgba(83, 102, 255, 0.8)'
-          ][index % 8]
+          'rgba(25, 118, 210, 0.85)' : colores[index % 8]
         ),
         borderColor: sortedCausas.map((item, index) => 
           filtrosActivos.causaSiniestro === item[0] ? 
-          'rgba(25, 118, 210, 1)' :
-          [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)',
-            'rgba(199, 199, 199, 1)',
-            'rgba(83, 102, 255, 1)'
-          ][index % 8]
+          'rgba(25, 118, 210, 1)' : coloresBorde[index % 8]
         ),
-        borderWidth: 2
+        borderWidth: 3,
+        borderRadius: 8,
+        hoverBackgroundColor: sortedCausas.map((item, index) => 
+          filtrosActivos.causaSiniestro === item[0] ? 
+          'rgba(25, 118, 210, 1)' : colores[index % 8].replace('0.85', '1')
+        )
       }]
     },
     options: {
@@ -1341,10 +1526,12 @@ function crearGraficasCausas() {
       plugins: { 
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
-          titleFont: { size: 14, weight: 'bold' },
-          bodyFont: { size: 13 },
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             title: function(context) {
               const index = context[0].dataIndex;
@@ -1356,7 +1543,7 @@ function crearGraficasCausas() {
               return `${value} incidentes (${porcentaje}% del total)`;
             },
             footer: function() {
-              return 'Haz clic para filtrar';
+              return '💡 Haz clic para filtrar';
             }
           }
         }
@@ -1364,20 +1551,30 @@ function crearGraficasCausas() {
       scales: { 
         x: { 
           beginAtZero: true, 
-          ticks: { precision: 0 }
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
         },
         y: {
           ticks: {
-            font: { size: 11 },
-            maxRotation: 0
-          }
+            font: { size: 12, weight: '600' },
+            maxRotation: 0,
+            color: '#666'
+          },
+          grid: { display: false }
         }
       }
     }
   });
 }
 
-// CLASIFICACIÓN DE FALLECIDOS
+
 function crearGraficasClasificacionFallecidos() {
   const ctx = document.getElementById('chartClasificacionFallecidos');
   if (!ctx) return;
@@ -1396,7 +1593,7 @@ function crearGraficasClasificacionFallecidos() {
   const sortedClasificacion = Object.entries(clasificacion).sort((a, b) => b[1] - a[1]);
   if (sortedClasificacion.length === 0) {
     const parent = ctx.parentElement;
-    if (parent) parent.innerHTML = '<p class="empty-state">No hay datos de clasificación</p>';
+    if (parent) parent.innerHTML = '<p class="empty-state">No hay datos de clasificación disponibles</p>';
     return;
   }
   
@@ -1412,18 +1609,18 @@ function crearGraficasClasificacionFallecidos() {
         label: 'Fallecidos',
         data: sortedClasificacion.map(c => c[1]),
         backgroundColor: [
-          '#FF6384',
-          '#36A2EB', 
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF',
-          '#FF9F40',
-          '#FF6384',
-          '#C9CBCF'
+          'rgba(255, 99, 132, 0.85)',
+          'rgba(54, 162, 235, 0.85)', 
+          'rgba(255, 206, 86, 0.85)',
+          'rgba(76, 175, 80, 0.85)',
+          'rgba(153, 102, 255, 0.85)',
+          'rgba(255, 152, 0, 0.85)',
+          'rgba(233, 30, 99, 0.85)',
+          'rgba(158, 158, 158, 0.85)'
         ],
-        borderWidth: 3,
+        borderWidth: 4,
         borderColor: '#ffffff',
-        hoverBorderWidth: 4
+        hoverOffset: 15
       }]
     },
     options: {
@@ -1433,8 +1630,8 @@ function crearGraficasClasificacionFallecidos() {
         legend: { 
           position: 'right',
           labels: {
-            padding: 15,
-            font: { size: 12, weight: '600' },
+            padding: 18,
+            font: { size: 13, weight: '700' },
             generateLabels: function(chart) {
               const data = chart.data;
               if (data.labels.length && data.datasets.length) {
@@ -1452,10 +1649,12 @@ function crearGraficasClasificacionFallecidos() {
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
-          titleFont: { size: 14, weight: 'bold' },
-          bodyFont: { size: 13 },
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             label: function(context) {
               const value = context.parsed;
@@ -1467,16 +1666,15 @@ function crearGraficasClasificacionFallecidos() {
         title: {
           display: true,
           text: `Total: ${totalFallecidos.toLocaleString()} fallecidos`,
-          font: { size: 14, weight: 'bold' },
+          font: { size: 15, weight: 'bold' },
           color: '#1976d2',
-          padding: { bottom: 15 }
+          padding: { bottom: 18 }
         }
       }
     }
   });
 }
 
-// TIPOS DE VIALIDAD - INTERACTIVA
 function crearGraficasTiposVialidad() {
   const ctx = document.getElementById('chartTiposVialidad');
   if (!ctx) return;
@@ -1500,13 +1698,22 @@ function crearGraficasTiposVialidad() {
       labels: sortedVialidades.map(v => v[0]),
       datasets: [{
         data: sortedVialidades.map(v => v[1]),
-        backgroundColor: sortedVialidades.map((item, index) => 
-          filtrosActivos.tipoVialidad === item[0] ? 
-          '#1976d2' :
-          ['#4BC0C0', '#FF6384', '#36A2EB', '#FFCE56', '#9966FF'][index % 5]
-        ),
-        borderWidth: 2,
-        borderColor: '#ffffff'
+        backgroundColor: sortedVialidades.map((item, index) => {
+          if (filtrosActivos.tipoVialidad === item[0]) {
+            return 'rgba(25, 118, 210, 0.85)';
+          }
+          const colores = [
+            'rgba(76, 175, 80, 0.85)', 
+            'rgba(255, 99, 132, 0.85)', 
+            'rgba(54, 162, 235, 0.85)', 
+            'rgba(255, 206, 86, 0.85)', 
+            'rgba(153, 102, 255, 0.85)'
+          ];
+          return colores[index % 5];
+        }),
+        borderWidth: 4,
+        borderColor: '#ffffff',
+        hoverOffset: 15
       }]
     },
     options: {
@@ -1528,15 +1735,17 @@ function crearGraficasTiposVialidad() {
         legend: { 
           position: 'right',
           labels: {
-            padding: 15,
-            font: { size: 12, weight: '600' }
+            padding: 18,
+            font: { size: 13, weight: '700' }
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: 12,
-          titleFont: { size: 14, weight: 'bold' },
-          bodyFont: { size: 13 },
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             label: function(context) {
               const value = context.parsed;
@@ -1544,7 +1753,7 @@ function crearGraficasTiposVialidad() {
               return `${context.label}: ${value} incidentes (${porcentaje}%)`;
             },
             footer: function() {
-              return 'Haz clic para filtrar';
+              return '💡 Haz clic para filtrar';
             }
           }
         }
@@ -1553,7 +1762,6 @@ function crearGraficasTiposVialidad() {
   });
 }
 
-// GRÁFICAS NO INTERACTIVAS
 function crearGraficaDias(analizador) {
   const ctx = document.getElementById('chartDias');
   if (!ctx) return;
@@ -1567,17 +1775,38 @@ function crearGraficaDias(analizador) {
       labels: datosDia.map(d => d.dia),
       datasets: [{
         data: datosDia.map(d => d.cantidad),
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.85)', 
+          'rgba(54, 162, 235, 0.85)', 
+          'rgba(255, 206, 86, 0.85)', 
+          'rgba(76, 175, 80, 0.85)', 
+          'rgba(153, 102, 255, 0.85)', 
+          'rgba(255, 159, 64, 0.85)', 
+          'rgba(233, 30, 99, 0.85)'
+        ],
+        borderWidth: 4,
+        borderColor: '#ffffff',
+        hoverOffset: 15
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
-        legend: { position: 'right' },
+        legend: { 
+          position: 'right',
+          labels: {
+            padding: 18,
+            font: { size: 13, weight: '700' }
+          }
+        },
         tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
           callbacks: {
             label: function(context) {
               const value = context.parsed;
@@ -1587,12 +1816,12 @@ function crearGraficaDias(analizador) {
             }
           }
         },
-        // ⭐ NUEVO: Mostrar si hay filtro activo
         title: {
           display: filtrosActivos.municipio !== null,
-          text: filtrosActivos.municipio ? `Filtrado: ${filtrosActivos.municipio}` : '',
-          font: { size: 12, weight: 'bold' },
-          color: '#4caf50'
+          text: filtrosActivos.municipio ? `📍 Filtrado: ${filtrosActivos.municipio}` : '',
+          font: { size: 14, weight: 'bold' },
+          color: '#4caf50',
+          padding: { bottom: 15 }
         }
       }
     }
@@ -1603,11 +1832,9 @@ function crearGraficaMunicipios() {
   const ctx = document.getElementById('chartMunicipios');
   if (!ctx) return;
   
-  // ⭐ CAMBIO: Usar datos filtrados
-  const datosFiltrados = obtenerDatosFiltrados();
-  
+  // SIEMPRE usar allIncidentsData (todos los datos) para mostrar el Top 10 completo
   const municipios = {};
-  datosFiltrados.forEach(row => {
+  allIncidentsData.forEach(row => {
     const municipio = row[COLUMNAS.MUNICIPIO] || 'Desconocido';
     municipios[municipio] = (municipios[municipio] || 0) + 1;
   });
@@ -1616,21 +1843,11 @@ function crearGraficaMunicipios() {
   
   if (charts.municipios) charts.municipios.destroy();
   
-  // Si hay filtro de municipio y solo hay 1 municipio, mostrar mensaje
-  if (filtrosActivos.municipio && top10.length === 1) {
-    const parent = ctx.parentElement;
-    if (parent) {
-      parent.innerHTML = `
-        <h4><i class="fas fa-city"></i> Top 10 Municipios con Más Incidentes</h4>
-        <div style="text-align: center; padding: 40px; color: #666;">
-          <i class="fas fa-info-circle" style="font-size: 3em; color: #1976d2; margin-bottom: 15px;"></i>
-          <p style="font-size: 16px; font-weight: 600;">Mostrando datos de: ${filtrosActivos.municipio}</p>
-          <p style="font-size: 14px;">${top10[0][1]} incidentes totales</p>
-        </div>
-      `;
-    }
-    return;
-  }
+  // Verificar si hay filtros activos para cambiar el color
+  const hayFiltros = filtrosActivos.municipio || 
+                     filtrosActivos.tipoSiniestro || 
+                     filtrosActivos.causaSiniestro || 
+                     filtrosActivos.tipoVialidad;
   
   charts.municipios = new Chart(ctx, {
     type: 'bar',
@@ -1639,9 +1856,20 @@ function crearGraficaMunicipios() {
       datasets: [{
         label: 'Incidentes',
         data: top10.map(m => m[1]),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 2
+        backgroundColor: top10.map(m => 
+          m[0] === filtrosActivos.municipio ? 
+          'rgba(76, 175, 80, 0.85)' : 'rgba(54, 162, 235, 0.75)'
+        ),
+        borderColor: top10.map(m => 
+          m[0] === filtrosActivos.municipio ? 
+          'rgba(76, 175, 80, 1)' : 'rgba(54, 162, 235, 1)'
+        ),
+        borderWidth: 3,
+        borderRadius: 8,
+        hoverBackgroundColor: top10.map(m => 
+          m[0] === filtrosActivos.municipio ? 
+          'rgba(76, 175, 80, 1)' : 'rgba(54, 162, 235, 1)'
+        )
       }]
     },
     options: {
@@ -1649,25 +1877,59 @@ function crearGraficaMunicipios() {
       maintainAspectRatio: true,
       plugins: { 
         legend: { display: false },
-        // ⭐ NUEVO: Indicador de filtro
         title: {
-          display: filtrosActivos.municipio !== null || filtrosActivos.tipoSiniestro !== null || filtrosActivos.causaSiniestro !== null,
-          text: '📊 Datos filtrados',
-          font: { size: 12, weight: 'bold' },
-          color: '#4caf50'
+          display: hayFiltros,
+          text: filtrosActivos.municipio ? 
+            `📍 Municipio filtrado: ${filtrosActivos.municipio}` : 
+            '📊 Datos filtrados aplicados',
+          font: { size: 14, weight: 'bold' },
+          color: filtrosActivos.municipio ? '#4caf50' : '#1976d2',
+          padding: { bottom: 15 }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const municipio = context.label;
+              const valor = context.parsed.y;
+              
+              if (municipio === filtrosActivos.municipio) {
+                return `${valor} incidentes ⭐ (FILTRADO)`;
+              }
+              return `${valor} incidentes`;
+            }
+          }
         }
       },
       scales: { 
         y: { 
           beginAtZero: true, 
-          ticks: { precision: 0 } 
-        } 
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { display: false }
+        }
       }
     }
   });
 }
-
-window.actualizarDistribucionTemporal = actualizarDistribucionTemporal;
 
 // ============================================================
 // ANÁLISIS CRUZADO
@@ -1690,7 +1952,6 @@ function actualizarAnalisisCruzado() {
 }
 
 function analisisMunicipioFallecidos() {
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   const datos = {};
@@ -1714,9 +1975,10 @@ function analisisMunicipioFallecidos() {
     [{
       label: 'Fallecidos por Incidente',
       data: municipiosConLetalidad.map(m => m.tasa),
-      backgroundColor: 'rgba(255, 99, 132, 0.6)',
-      borderColor: 'rgba(255, 99, 132, 1)',
-      borderWidth: 2
+      backgroundColor: 'rgba(244, 67, 54, 0.75)',
+      borderColor: 'rgba(244, 67, 54, 1)',
+      borderWidth: 3,
+      borderRadius: 8
     }],
     'bar'
   );
@@ -1725,7 +1987,6 @@ function analisisMunicipioFallecidos() {
 }
 
 function analisisVialidadTipo() {
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   const vialidades = {};
@@ -1737,14 +1998,29 @@ function analisisVialidadTipo() {
   });
   
   const todasCausas = [...new Set(datosFiltrados.map(row => row[COLUMNAS.CAUSA_SINIESTRO] || 'Otro'))].slice(0, 5);
-  const colores = ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
+  const colores = [
+    'rgba(255, 99, 132, 0.75)', 
+    'rgba(54, 162, 235, 0.75)', 
+    'rgba(255, 206, 86, 0.75)', 
+    'rgba(75, 192, 192, 0.75)', 
+    'rgba(153, 102, 255, 0.75)'
+  ];
+  
+  const coloresBorde = [
+    'rgba(255, 99, 132, 1)', 
+    'rgba(54, 162, 235, 1)', 
+    'rgba(255, 206, 86, 1)', 
+    'rgba(75, 192, 192, 1)', 
+    'rgba(153, 102, 255, 1)'
+  ];
   
   const datasets = todasCausas.map((causa, idx) => ({
     label: causa,
     data: Object.keys(vialidades).map(vialidad => vialidades[vialidad][causa] || 0),
     backgroundColor: colores[idx],
-    borderColor: colores[idx].replace('0.6', '1'),
-    borderWidth: 2
+    borderColor: coloresBorde[idx],
+    borderWidth: 3,
+    borderRadius: 6
   }));
   
   crearGraficaAnalisisCruzado(Object.keys(vialidades), datasets, 'bar', true);
@@ -1756,7 +2032,6 @@ function analisisDiaCausa() {
   const datosPorDia = {};
   dias.forEach(dia => datosPorDia[dia] = {});
   
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   datosFiltrados.forEach(row => {
@@ -1780,14 +2055,29 @@ function analisisDiaCausa() {
   });
   
   const todasCausas = [...new Set(datosFiltrados.map(row => row[COLUMNAS.CAUSA_SINIESTRO] || 'Otro'))].slice(0, 5);
-  const colores = ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
+  const colores = [
+    'rgba(255, 99, 132, 0.75)', 
+    'rgba(54, 162, 235, 0.75)', 
+    'rgba(255, 206, 86, 0.75)', 
+    'rgba(75, 192, 192, 0.75)', 
+    'rgba(153, 102, 255, 0.75)'
+  ];
+  
+  const coloresBorde = [
+    'rgba(255, 99, 132, 1)', 
+    'rgba(54, 162, 235, 1)', 
+    'rgba(255, 206, 86, 1)', 
+    'rgba(75, 192, 192, 1)', 
+    'rgba(153, 102, 255, 1)'
+  ];
   
   const datasets = todasCausas.map((causa, idx) => ({
     label: causa,
     data: dias.map(dia => datosPorDia[dia][causa] || 0),
     backgroundColor: colores[idx],
-    borderColor: colores[idx].replace('0.6', '1'),
-    borderWidth: 2
+    borderColor: coloresBorde[idx],
+    borderWidth: 3,
+    borderRadius: 6
   }));
   
   crearGraficaAnalisisCruzado(dias, datasets, 'bar', true);
@@ -1795,7 +2085,6 @@ function analisisDiaCausa() {
 }
 
 function analisisMunicipioCausa() {
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   const municipios = {};
@@ -1816,14 +2105,29 @@ function analisisMunicipioCausa() {
   });
   
   const todasCausas = [...new Set(datosFiltrados.map(row => row[COLUMNAS.CAUSA_SINIESTRO] || 'Otro'))].slice(0, 5);
-  const colores = ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
+  const colores = [
+    'rgba(255, 99, 132, 0.75)', 
+    'rgba(54, 162, 235, 0.75)', 
+    'rgba(255, 206, 86, 0.75)', 
+    'rgba(75, 192, 192, 0.75)', 
+    'rgba(153, 102, 255, 0.75)'
+  ];
+  
+  const coloresBorde = [
+    'rgba(255, 99, 132, 1)', 
+    'rgba(54, 162, 235, 1)', 
+    'rgba(255, 206, 86, 1)', 
+    'rgba(75, 192, 192, 1)', 
+    'rgba(153, 102, 255, 1)'
+  ];
   
   const datasets = todasCausas.map((causa, idx) => ({
     label: causa,
     data: top10Municipios.map(mun => datosPorMunicipio[mun][causa] || 0),
     backgroundColor: colores[idx],
-    borderColor: colores[idx].replace('0.6', '1'),
-    borderWidth: 2
+    borderColor: coloresBorde[idx],
+    borderWidth: 3,
+    borderRadius: 6
   }));
   
   crearGraficaAnalisisCruzado(top10Municipios, datasets, 'bar', true);
@@ -1831,7 +2135,6 @@ function analisisMunicipioCausa() {
 }
 
 function analisisVialidadFallecidos() {
-  // ⭐ CAMBIO: Usar datos filtrados
   const datosFiltrados = obtenerDatosFiltrados();
   
   const datos = {};
@@ -1855,9 +2158,10 @@ function analisisVialidadFallecidos() {
     [{
       label: 'Fallecidos por Incidente',
       data: vialidadesConLetalidad.map(v => v.tasa),
-      backgroundColor: 'rgba(75, 192, 192, 0.6)',
-      borderColor: 'rgba(75, 192, 192, 1)',
-      borderWidth: 2
+      backgroundColor: 'rgba(76, 175, 80, 0.75)',
+      borderColor: 'rgba(76, 175, 80, 1)',
+      borderWidth: 3,
+      borderRadius: 8
     }],
     'bar'
   );
@@ -1876,10 +2180,45 @@ function crearGraficaAnalisisCruzado(labels, datasets, tipo = 'bar', stacked = f
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { position: 'top' } },
+      plugins: { 
+        legend: { 
+          position: 'top',
+          labels: {
+            padding: 18,
+            font: { size: 13, weight: '700' }
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1
+        }
+      },
       scales: tipo !== 'pie' && tipo !== 'doughnut' ? {
-        x: { stacked },
-        y: { stacked, beginAtZero: true, ticks: { precision: 0 } }
+        x: { 
+          stacked,
+          ticks: {
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { display: false }
+        },
+        y: { 
+          stacked, 
+          beginAtZero: true, 
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        }
       } : {}
     }
   });
@@ -1893,35 +2232,47 @@ function generarInsights(tipoAnalisis, datos) {
   
   switch(tipoAnalisis) {
     case 'municipio_fallecidos':
-      const masPeligroso = datos[0];
-      insights.push(`El municipio más letal es <strong>${masPeligroso.municipio}</strong> con ${masPeligroso.tasa} fallecidos por incidente.`);
-      insights.push(`En total, ${masPeligroso.municipio} ha registrado ${masPeligroso.fallecidos} fallecidos en ${masPeligroso.incidentes} incidentes.`);
+      if (datos.length > 0) {
+        const masPeligroso = datos[0];
+        insights.push(`El municipio más letal es <strong>${masPeligroso.municipio}</strong> con ${masPeligroso.tasa} fallecidos por incidente.`);
+        insights.push(`En total, ${masPeligroso.municipio} ha registrado ${masPeligroso.fallecidos} fallecidos en ${masPeligroso.incidentes} incidentes.`);
+      }
       break;
     case 'vialidad_tipo':
       const vialidadMasPeligrosa = Object.entries(datos.vialidades).map(([v, causas]) => ({
         vialidad: v,
         total: Object.values(causas).reduce((a, b) => a + b, 0)
       })).sort((a, b) => b.total - a.total)[0];
-      insights.push(`<strong>${vialidadMasPeligrosa.vialidad}</strong> es el tipo de vialidad con más incidentes (${vialidadMasPeligrosa.total} casos).`);
+      if (vialidadMasPeligrosa) {
+        insights.push(`<strong>${vialidadMasPeligrosa.vialidad}</strong> es el tipo de vialidad con más incidentes (${vialidadMasPeligrosa.total} casos).`);
+      }
       break;
     case 'dia_causa':
       const diaMasPeligroso = Object.entries(datos.datosPorDia).map(([dia, causas]) => ({
         dia,
         total: Object.values(causas).reduce((a, b) => a + b, 0)
       })).sort((a, b) => b.total - a.total)[0];
-      insights.push(`<strong>${diaMasPeligroso.dia}</strong> es el día con más incidentes registrados.`);
+      if (diaMasPeligroso) {
+        insights.push(`<strong>${diaMasPeligroso.dia}</strong> es el día con más incidentes registrados.`);
+      }
       break;
     case 'vialidad_fallecidos':
-      const masPeligrosaVialidad = datos[0];
-      insights.push(`<strong>${masPeligrosaVialidad.vialidad}</strong> tiene la tasa de letalidad más alta: ${masPeligrosaVialidad.tasa} fallecidos por incidente.`);
+      if (datos.length > 0) {
+        const masPeligrosaVialidad = datos[0];
+        insights.push(`<strong>${masPeligrosaVialidad.vialidad}</strong> tiene la tasa de letalidad más alta: ${masPeligrosaVialidad.tasa} fallecidos por incidente.`);
+      }
       break;
     case 'municipio_causa':
       insights.push(`Análisis de las causas principales por municipio muestra patrones diferenciados según la ubicación.`);
       break;
   }
   
+  if (insights.length === 0) {
+    insights.push('No se encontraron insights relevantes con los datos actuales.');
+  }
+  
   container.innerHTML = insights.map(insight => 
-    `<div class="insight-item"><i class="fas fa-lightbulb"></i> ${insight}</div>`
+    `<div class="insight-item"><i class="fas fa-lightbulb"></i> <span>${insight}</span></div>`
   ).join('');
 }
 
@@ -1938,26 +2289,1755 @@ window.togglePanel = function(panel) {
     
     if (panel === 'perfil') actualizarPerfilSiniestros();
     if (panel === 'cruzado') inicializarAnalisisCruzado();
+    if (panel === 'transporte') inicializarTransportePublico();
   } else {
     content.style.display = 'none';
     icon.className = 'fas fa-chevron-down';
   }
 };
 
-// ⭐ EXPORTAR FUNCIONES GLOBALES
-window.cambiarFiltroMunicipio = cambiarFiltroMunicipio;
-window.limpiarFiltrosCruzados = limpiarFiltrosCruzados;
-window.aplicarFiltroCruzado = aplicarFiltroCruzado;
-window.limpiarFiltroTemporal = limpiarFiltroTemporal;
-window.actualizarDistribucionTemporal = actualizarDistribucionTemporal;
-window.togglePanel = togglePanel;
 window.actualizarAnalisisCruzado = actualizarAnalisisCruzado;
 
+/* ============================================================
+   SISTEMA COMPLETO DE ANÁLISIS DE TRANSPORTE PÚBLICO
+   Versión Premium Optimizada
+   ============================================================ */
+
+let transporteFiltroActivo = null;
+let chartsTransporte = {};
+let datosTransporteCache = null;
+
+function obtenerTodosTransportePublico() {
+  if (datosTransporteCache !== null) {
+    return datosTransporteCache;
+  }
+  
+  console.log('🔍 Filtrando todos los registros de transporte público...');
+  
+  datosTransporteCache = allIncidentsData.filter(row => {
+    const tipoTransporte = (row[COLUMNAS.TIPO_TRANSPORTE_PUBLICO] || '').toLowerCase().trim();
+    
+    const esColectivo = tipoTransporte.includes('colectivo') || 
+                        (row[COLUMNAS.COLECTIVO_NUMERO] && row[COLUMNAS.COLECTIVO_NUMERO] !== '');
+    
+    const esTaxi = (tipoTransporte.includes('taxi') && !tipoTransporte.includes('moto')) || 
+                   (row[COLUMNAS.TAXI_NUMERO] && row[COLUMNAS.TAXI_NUMERO] !== '');
+    
+    const esMototaxi = tipoTransporte.includes('mototaxi') || 
+                       (row[COLUMNAS.MOTOTAXI_NUMERO] && row[COLUMNAS.MOTOTAXI_NUMERO] !== '');
+    
+    return esColectivo || esTaxi || esMototaxi;
+  });
+  
+  console.log(`✅ Total de transporte público encontrado: ${datosTransporteCache.length}`);
+  return datosTransporteCache;
+}
+
+function obtenerDatosTransporte(tipo) {
+  console.log(`🔍 Filtrando datos de ${tipo}...`);
+  
+  const datos = allIncidentsData.filter(row => {
+    const tipoTransporte = (row[COLUMNAS.TIPO_TRANSPORTE_PUBLICO] || '').toLowerCase().trim();
+    
+    if (tipo === 'colectivo') {
+      return tipoTransporte.includes('colectivo') || 
+             (row[COLUMNAS.COLECTIVO_NUMERO] && row[COLUMNAS.COLECTIVO_NUMERO] !== '');
+    } 
+    else if (tipo === 'taxi') {
+      return (tipoTransporte.includes('taxi') && !tipoTransporte.includes('moto')) || 
+             (row[COLUMNAS.TAXI_NUMERO] && row[COLUMNAS.TAXI_NUMERO] !== '' && 
+              !tipoTransporte.includes('moto'));
+    } 
+    else if (tipo === 'mototaxi') {
+      return tipoTransporte.includes('mototaxi') || 
+             (row[COLUMNAS.MOTOTAXI_NUMERO] && row[COLUMNAS.MOTOTAXI_NUMERO] !== '');
+    }
+    return false;
+  });
+  
+  console.log(`✅ Encontrados ${datos.length} registros de ${tipo}`);
+  return datos;
+}
+
+function contarRegistrosTransporte() {
+  console.log('\n📊 ========== CONTANDO TRANSPORTE PÚBLICO ==========');
+  
+  const conteos = {
+    colectivo: 0,
+    taxi: 0,
+    mototaxi: 0
+  };
+  
+  allIncidentsData.forEach((row) => {
+    const tipoTransporte = (row[COLUMNAS.TIPO_TRANSPORTE_PUBLICO] || '').toLowerCase().trim();
+    const colectivoNum = row[COLUMNAS.COLECTIVO_NUMERO];
+    const taxiNum = row[COLUMNAS.TAXI_NUMERO];
+    const mototaxiNum = row[COLUMNAS.MOTOTAXI_NUMERO];
+    
+    if (tipoTransporte.includes('colectivo') || (colectivoNum && colectivoNum !== '')) {
+      conteos.colectivo++;
+    } 
+    else if ((tipoTransporte.includes('taxi') && !tipoTransporte.includes('moto')) || 
+             (taxiNum && taxiNum !== '' && !tipoTransporte.includes('moto'))) {
+      conteos.taxi++;
+    }
+    if (tipoTransporte.includes('mototaxi') || (mototaxiNum && mototaxiNum !== '')) {
+      conteos.mototaxi++;
+    }
+  });
+  
+  const colectivoEl = document.getElementById('countColectivos');
+  const taxiEl = document.getElementById('countTaxis');
+  const mototaxiEl = document.getElementById('countMototaxis');
+  
+  if (colectivoEl) colectivoEl.textContent = conteos.colectivo;
+  if (taxiEl) taxiEl.textContent = conteos.taxi;
+  if (mototaxiEl) mototaxiEl.textContent = conteos.mototaxi;
+  
+  console.log('📊 Conteos finales:');
+  console.log(`   🚌 Colectivos: ${conteos.colectivo}`);
+  console.log(`   🚕 Taxis: ${conteos.taxi}`);
+  console.log(`   🛵 Mototaxis: ${conteos.mototaxi}`);
+  console.log(`   📊 TOTAL: ${conteos.colectivo + conteos.taxi + conteos.mototaxi}`);
+  console.log('========== FIN CONTEO ==========\n');
+  
+  return conteos;
+}
+
+function cambiarTransporteFiltro(tipo) {
+  console.log(`\n🚌 ========== CAMBIANDO FILTRO ==========`);
+  console.log(`Tipo seleccionado: ${tipo}`);
+  
+  transporteFiltroActivo = tipo;
+  
+  const radioBtn = document.getElementById(`radio${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+  if (radioBtn) radioBtn.checked = true;
+  
+  const btnLimpiar = document.getElementById('btnLimpiarTransporte');
+  if (btnLimpiar) btnLimpiar.style.display = 'flex';
+  
+  const vistaGeneral = document.getElementById('vistaGeneralTransporte');
+  if (vistaGeneral) vistaGeneral.style.display = 'none';
+  
+  actualizarEstadisticasTransporte(tipo);
+  
+  const container = document.getElementById('transporteStatsContainer');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  const tiposNombre = {
+    'colectivo': 'Colectivos',
+    'taxi': 'Taxis',
+    'mototaxi': 'Mototaxis'
+  };
+  
+  mostrarNotificacion(`✅ Mostrando estadísticas de ${tiposNombre[tipo]}`, 'info', 2500);
+  console.log('========== FIN CAMBIO FILTRO ==========\n');
+}
+
+function limpiarFiltroTransporte() {
+  console.log('\n🔄 ========== LIMPIANDO FILTRO ==========');
+  
+  transporteFiltroActivo = null;
+  
+  document.querySelectorAll('input[name="transportePublicoFiltro"]').forEach(radio => {
+    radio.checked = false;
+  });
+  
+  const btnLimpiar = document.getElementById('btnLimpiarTransporte');
+  if (btnLimpiar) btnLimpiar.style.display = 'none';
+  
+  const vistaGeneral = document.getElementById('vistaGeneralTransporte');
+  if (vistaGeneral) vistaGeneral.style.display = 'block';
+  
+  const container = document.getElementById('transporteStatsContainer');
+  if (container) {
+    container.innerHTML = `
+      <div class="transport-empty-state">
+        <i class="fas fa-hand-pointer" style="font-size: 5em; color: #90caf9; margin-bottom: 25px;"></i>
+        <p style="color: #666; font-size: 20px; font-weight: 700;">Selecciona un tipo de transporte para ver análisis detallado</p>
+        <p style="color: #999; font-size: 16px; margin-top: 12px;">Haz clic en una de las tarjetas de arriba</p>
+      </div>
+    `;
+  }
+  
+  if (vistaGeneral) {
+    vistaGeneral.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  
+  mostrarNotificacion('✅ Mostrando panorama general del transporte público', 'success', 2500);
+  console.log('========== FIN LIMPIAR FILTRO ==========\n');
+}
+
+function generarVistaGeneralTransporte() {
+  console.log('\n🎨 ========== GENERANDO VISTA GENERAL ==========');
+  
+  const datosTransporte = obtenerTodosTransportePublico();
+  console.log(`📊 Total registros de transporte: ${datosTransporte.length}`);
+  
+  if (datosTransporte.length === 0) {
+    console.log('⚠️ No hay datos de transporte público');
+    return;
+  }
+  
+  const totalIncidentes = datosTransporte.length;
+  const totalFallecidos = datosTransporte.reduce((sum, row) => 
+    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
+  );
+  
+  const tasaLetalidad = totalIncidentes > 0 ? 
+    ((totalFallecidos / totalIncidentes) * 100).toFixed(1) : 0;
+  
+  const porcentajeTotal = allIncidentsData.length > 0 ? 
+    ((totalIncidentes / allIncidentsData.length) * 100).toFixed(1) : 0;
+  
+  console.log(`📊 Métricas calculadas:`);
+  console.log(`   Total incidentes: ${totalIncidentes}`);
+  console.log(`   Total fallecidos: ${totalFallecidos}`);
+  console.log(`   Tasa letalidad: ${tasaLetalidad}%`);
+  console.log(`   Porcentaje del total: ${porcentajeTotal}%`);
+  
+  const elementosMetricas = {
+    'generalTotalIncidentes': totalIncidentes,
+    'generalTotalFallecidos': totalFallecidos,
+    'generalTasaLetalidad': tasaLetalidad + '%',
+    'generalPorcentajeTotal': porcentajeTotal + '%'
+  };
+  
+  Object.entries(elementosMetricas).forEach(([id, valor]) => {
+    const elemento = document.getElementById(id);
+    if (elemento) {
+      elemento.textContent = valor;
+      console.log(`✅ Actualizado ${id}: ${valor}`);
+    } else {
+      console.warn(`⚠️ No se encontró elemento: ${id}`);
+    }
+  });
+  
+  console.log('🎨 Generando gráficas...');
+  setTimeout(() => {
+    crearGraficaComparacionTipos();
+    crearGraficaGravedadGeneral();
+    crearGraficaEvolucionTemporal();
+    crearGraficaDiasSemanaTransporte();
+    crearGraficaVialidadTransporte();
+    crearGraficaMunicipiosTransporte();
+    console.log('✅ Todas las gráficas generadas');
+  }, 100);
+  
+  console.log('========== FIN VISTA GENERAL ==========\n');
+}
+
+function crearGraficaComparacionTipos() {
+  const ctx = document.getElementById('chartComparacionTipos');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartComparacionTipos');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de comparación de tipos...');
+  
+  const conteos = contarRegistrosTransporte();
+  const total = conteos.colectivo + conteos.taxi + conteos.mototaxi;
+  
+  if (chartsTransporte.comparacion) {
+    chartsTransporte.comparacion.destroy();
+  }
+  
+  chartsTransporte.comparacion = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Colectivos', 'Taxis', 'Mototaxis'],
+      datasets: [{
+        label: 'Número de Incidentes',
+        data: [conteos.colectivo, conteos.taxi, conteos.mototaxi],
+        backgroundColor: [
+          'rgba(255, 152, 0, 0.85)',
+          'rgba(33, 150, 243, 0.85)',
+          'rgba(76, 175, 80, 0.85)'
+        ],
+        borderColor: [
+          'rgb(245, 124, 0)',
+          'rgb(25, 118, 210)',
+          'rgb(56, 142, 60)'
+        ],
+        borderWidth: 3,
+        borderRadius: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `Total: ${total} incidentes de transporte público`,
+          font: { size: 16, weight: 'bold' },
+          color: '#1976d2',
+          padding: { bottom: 20 }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const valor = context.parsed.y;
+              const porcentaje = total > 0 ? ((valor / total) * 100).toFixed(1) : 0;
+              return `${valor} incidentes (${porcentaje}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 13, weight: '700' },
+            color: '#333'
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de comparación creada');
+}
+
+function crearGraficaGravedadGeneral() {
+  const ctx = document.getElementById('chartGravedadGeneral');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartGravedadGeneral');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de gravedad general...');
+  
+  const datosTransporte = obtenerTodosTransportePublico();
+  const gravedad = {
+    'Sin heridos': 0,
+    'Con heridos': 0,
+    'Con fallecidos': 0
+  };
+  
+  datosTransporte.forEach(row => {
+    const fallecidos = parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0);
+    const heridos = parseInt(row[COLUMNAS.TOTAL_HERIDOS] || 0);
+    
+    if (fallecidos > 0) {
+      gravedad['Con fallecidos']++;
+    } else if (heridos > 0) {
+      gravedad['Con heridos']++;
+    } else {
+      gravedad['Sin heridos']++;
+    }
+  });
+  
+  if (chartsTransporte.gravedad) {
+    chartsTransporte.gravedad.destroy();
+  }
+  
+  chartsTransporte.gravedad = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(gravedad),
+      datasets: [{
+        data: Object.values(gravedad),
+        backgroundColor: [
+          'rgba(76, 175, 80, 0.85)',
+          'rgba(255, 152, 0, 0.85)',
+          'rgba(244, 67, 54, 0.85)'
+        ],
+        borderWidth: 4,
+        borderColor: '#ffffff',
+        hoverOffset: 15
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { 
+            padding: 18, 
+            font: { size: 13, weight: '700' } 
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de gravedad creada');
+}
+
+function crearGraficaEvolucionTemporal() {
+  const ctx = document.getElementById('chartEvolucionTemporal');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartEvolucionTemporal');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de evolución temporal...');
+  
+  const gruposMensuales = {};
+  
+  ['colectivo', 'taxi', 'mototaxi'].forEach(tipo => {
+    const datos = obtenerDatosTransporte(tipo);
+    
+    datos.forEach(row => {
+      const fechaStr = row[COLUMNAS.FECHA_SINIESTRO];
+      if (!fechaStr) return;
+      
+      let fecha = null;
+      if (fechaStr.includes('/')) {
+        const partes = fechaStr.split(' ')[0].split('/');
+        if (partes.length === 3) {
+          fecha = new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+      } else if (fechaStr.includes('-')) {
+        fecha = new Date(fechaStr.split(' ')[0]);
+      }
+      
+      if (!fecha || isNaN(fecha)) return;
+      
+      const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!gruposMensuales[clave]) {
+        gruposMensuales[clave] = { colectivo: 0, taxi: 0, mototaxi: 0 };
+      }
+      
+      gruposMensuales[clave][tipo]++;
+    });
+  });
+  
+  const clavesOrdenadas = Object.keys(gruposMensuales).sort();
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  const labels = clavesOrdenadas.map(clave => {
+    const [año, mes] = clave.split('-');
+    return `${meses[parseInt(mes) - 1]} ${año}`;
+  });
+  
+  if (chartsTransporte.evolucion) {
+    chartsTransporte.evolucion.destroy();
+  }
+  
+  chartsTransporte.evolucion = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Colectivos',
+          data: clavesOrdenadas.map(c => gruposMensuales[c].colectivo),
+          borderColor: 'rgb(255, 152, 0)',
+          backgroundColor: 'rgba(255, 152, 0, 0.15)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: 'rgb(255, 152, 0)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        },
+        {
+          label: 'Taxis',
+          data: clavesOrdenadas.map(c => gruposMensuales[c].taxi),
+          borderColor: 'rgb(33, 150, 243)',
+          backgroundColor: 'rgba(33, 150, 243, 0.15)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: 'rgb(33, 150, 243)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        },
+        {
+          label: 'Mototaxis',
+          data: clavesOrdenadas.map(c => gruposMensuales[c].mototaxi),
+          borderColor: 'rgb(76, 175, 80)',
+          backgroundColor: 'rgba(76, 175, 80, 0.15)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: 'rgb(76, 175, 80)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { 
+            padding: 18, 
+            font: { size: 13, weight: '700' },
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de evolución creada');
+}
+
+function crearGraficaDiasSemanaTransporte() {
+  const ctx = document.getElementById('chartDiasSemanaTransporte');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartDiasSemanaTransporte');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de días de la semana...');
+  
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const distribucion = new Array(7).fill(0);
+  
+  const datosTransporte = obtenerTodosTransportePublico();
+  
+  datosTransporte.forEach(row => {
+    const fechaStr = row[COLUMNAS.FECHA_SINIESTRO];
+    if (!fechaStr) return;
+    
+    let fecha = null;
+    if (fechaStr.includes('/')) {
+      const partes = fechaStr.split(' ')[0].split('/');
+      if (partes.length === 3) {
+        fecha = new Date(partes[2], partes[1] - 1, partes[0]);
+      }
+    } else if (fechaStr.includes('-')) {
+      fecha = new Date(fechaStr.split(' ')[0]);
+    }
+    
+    if (fecha && !isNaN(fecha)) {
+      distribucion[fecha.getDay()]++;
+    }
+  });
+  
+  if (chartsTransporte.dias) {
+    chartsTransporte.dias.destroy();
+  }
+  
+  chartsTransporte.dias = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dias,
+      datasets: [{
+        label: 'Incidentes',
+        data: distribucion,
+        backgroundColor: 'rgba(156, 39, 176, 0.85)',
+        borderColor: 'rgb(123, 31, 162)',
+        borderWidth: 3,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        },
+        x: {
+          ticks: {
+            font: { size: 12, weight: '700' },
+            color: '#333'
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de días de la semana creada');
+}
+
+function crearGraficaVialidadTransporte() {
+  const ctx = document.getElementById('chartVialidadTransporte');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartVialidadTransporte');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de vialidad...');
+  
+  const datosTransporte = obtenerTodosTransportePublico();
+  const vialidades = {};
+  
+  datosTransporte.forEach(row => {
+    const vialidad = row[COLUMNAS.TIPO_VIALIDAD] || 'No especificada';
+    vialidades[vialidad] = (vialidades[vialidad] || 0) + 1;
+  });
+  
+  const sortedVialidades = Object.entries(vialidades)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  
+  if (chartsTransporte.vialidad) {
+    chartsTransporte.vialidad.destroy();
+  }
+  
+  chartsTransporte.vialidad = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: sortedVialidades.map(v => v[0]),
+      datasets: [{
+        data: sortedVialidades.map(v => v[1]),
+        backgroundColor: [
+          'rgba(244, 67, 54, 0.85)',
+          'rgba(33, 150, 243, 0.85)',
+          'rgba(76, 175, 80, 0.85)',
+          'rgba(255, 193, 7, 0.85)',
+          'rgba(156, 39, 176, 0.85)'
+        ],
+        borderWidth: 4,
+        borderColor: '#ffffff',
+        hoverOffset: 15
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { 
+            padding: 18, 
+            font: { size: 13, weight: '700' } 
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const valor = context.parsed;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const porcentaje = ((valor / total) * 100).toFixed(1);
+              return `${context.label}: ${valor} (${porcentaje}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de vialidad creada');
+}
+
+function crearGraficaMunicipiosTransporte() {
+  const ctx = document.getElementById('chartMunicipiosTransporte');
+  if (!ctx) {
+    console.warn('⚠️ No se encontró canvas: chartMunicipiosTransporte');
+    return;
+  }
+  
+  console.log('📊 Creando gráfica de municipios...');
+  
+  const datosTransporte = obtenerTodosTransportePublico();
+  const municipios = {};
+  
+  datosTransporte.forEach(row => {
+    const municipio = row[COLUMNAS.MUNICIPIO] || 'Desconocido';
+    municipios[municipio] = (municipios[municipio] || 0) + 1;
+  });
+  
+  const top10 = Object.entries(municipios)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  
+  if (chartsTransporte.municipios) {
+    chartsTransporte.municipios.destroy();
+  }
+  
+  chartsTransporte.municipios = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top10.map(m => m[0]),
+      datasets: [{
+        label: 'Incidentes',
+        data: top10.map(m => m[1]),
+        backgroundColor: 'rgba(255, 87, 34, 0.85)',
+        borderColor: 'rgb(230, 74, 25)',
+        borderWidth: 3,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          padding: 14,
+          titleFont: { size: 15, weight: 'bold' },
+          bodyFont: { size: 14 },
+          borderColor: 'rgba(255,255,255,0.2)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { 
+            precision: 0,
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { 
+            color: 'rgba(0,0,0,0.05)',
+            drawBorder: false
+          }
+        },
+        y: {
+          ticks: {
+            font: { size: 12, weight: '600' },
+            color: '#666'
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  
+  console.log('✅ Gráfica de municipios creada');
+}
+
+function actualizarEstadisticasTransporte(tipo) {
+  console.log(`\n📊 ========== ACTUALIZANDO ESTADÍSTICAS ${tipo.toUpperCase()} ==========`);
+  
+  const datos = obtenerDatosTransporte(tipo);
+  const container = document.getElementById('transporteStatsContainer');
+  
+  if (!container) {
+    console.error('❌ No se encontró el contenedor transporteStatsContainer');
+    return;
+  }
+  
+  if (datos.length === 0) {
+    console.warn(`⚠️ No hay datos de ${tipo}`);
+    container.innerHTML = `
+      <div class="transport-empty-state">
+        <i class="fas fa-info-circle" style="font-size: 5em; color: #ff9800; margin-bottom: 25px;"></i>
+        <p style="color: #666; font-size: 20px; font-weight: 700;">No se encontraron datos de ${tipo}s</p>
+        <p style="color: #999; font-size: 16px; margin-top: 12px;">Los registros de ${tipo}s aparecerán aquí cuando estén disponibles</p>
+      </div>
+    `;
+    return;
+  }
+  
+  if (tipo === 'colectivo') {
+    generarEstadisticasColectivos(datos, container);
+  } else if (tipo === 'taxi') {
+    generarEstadisticasTaxis(datos, container);
+  } else if (tipo === 'mototaxi') {
+    generarEstadisticasMototaxis(datos, container);
+  }
+  
+  console.log(`========== FIN ACTUALIZACIÓN ${tipo.toUpperCase()} ==========\n`);
+}
+
+function generarEstadisticasColectivos(datos, container) {
+  console.log('🚌 Generando estadísticas de colectivos...');
+  
+  const totalIncidentes = datos.length;
+  const totalFallecidos = datos.reduce((sum, row) => 
+    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
+  );
+  
+  const rutas = {};
+  datos.forEach(row => {
+    const ruta = row[COLUMNAS.COLECTIVO_RUTA] || 'Sin ruta especificada';
+    if (ruta && ruta !== '') {
+      rutas[ruta] = (rutas[ruta] || 0) + 1;
+    }
+  });
+  const topRutas = Object.entries(rutas).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  
+  const estados = {};
+  datos.forEach(row => {
+    const estado = row[COLUMNAS.COLECTIVO_ESTADO] || 'No especificado';
+    estados[estado] = (estados[estado] || 0) + 1;
+  });
+  
+  const gravedad = {};
+  datos.forEach(row => {
+    const grav = row[COLUMNAS.COLECTIVO_GRAVEDAD] || 'No especificado';
+    gravedad[grav] = (gravedad[grav] || 0) + 1;
+  });
+  
+  container.innerHTML = `
+    <div class="transport-specific-header">
+      <h3>
+        🚌 Análisis Detallado de Colectivos
+        <span class="transport-type-badge">Colectivos</span>
+      </h3>
+    </div>
+    
+    <div class="transport-metrics-grid">
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="transport-metric-value">${totalIncidentes}</div>
+        <div class="transport-metric-label">Total de Incidentes</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-skull"></i></div>
+        <div class="transport-metric-value">${totalFallecidos}</div>
+        <div class="transport-metric-label">Total de Fallecidos</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-route"></i></div>
+        <div class="transport-metric-value">${Object.keys(rutas).length}</div>
+        <div class="transport-metric-label">Rutas Involucradas</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-percentage"></i></div>
+        <div class="transport-metric-value">${totalIncidentes > 0 ? ((totalFallecidos / totalIncidentes) * 100).toFixed(1) : 0}%</div>
+        <div class="transport-metric-label">Tasa de Letalidad</div>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-route"></i> Top 5 Rutas con Más Incidentes</h4>
+        <canvas id="chartColectivoRutas"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-heartbeat"></i> Estado de los Colectivos</h4>
+        <canvas id="chartColectivoEstados"></canvas>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-chart-pie"></i> Gravedad de los Incidentes</h4>
+        <canvas id="chartColectivoGravedad"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-users"></i> Pasajeros Involucrados</h4>
+        <canvas id="chartColectivoPasajeros"></canvas>
+      </div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    crearGraficasColectivos(datos, topRutas, estados, gravedad);
+  }, 100);
+  
+  console.log('✅ Estadísticas de colectivos generadas');
+}
+
+function crearGraficasColectivos(datos, topRutas, estados, gravedad) {
+  console.log('📊 Creando gráficas de colectivos...');
+  
+  const ctxRutas = document.getElementById('chartColectivoRutas');
+  if (ctxRutas && topRutas.length > 0) {
+    new Chart(ctxRutas, {
+      type: 'bar',
+      data: {
+        labels: topRutas.map(r => r[0]),
+        datasets: [{
+          label: 'Incidentes',
+          data: topRutas.map(r => r[1]),
+          backgroundColor: 'rgba(255, 152, 0, 0.85)',
+          borderColor: 'rgb(245, 124, 0)',
+          borderWidth: 3,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        },
+        scales: { 
+          x: { 
+            beginAtZero: true, 
+            ticks: { 
+              precision: 0,
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { 
+              color: 'rgba(0,0,0,0.05)',
+              drawBorder: false
+            }
+          },
+          y: {
+            ticks: {
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxEstados = document.getElementById('chartColectivoEstados');
+  if (ctxEstados && Object.keys(estados).length > 0) {
+    new Chart(ctxEstados, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(estados),
+        datasets: [{
+          data: Object.values(estados),
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.85)',
+            'rgba(255, 193, 7, 0.85)',
+            'rgba(244, 67, 54, 0.85)',
+            'rgba(33, 150, 243, 0.85)'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { 
+            position: 'right',
+            labels: { 
+              padding: 18, 
+              font: { size: 13, weight: '700' } 
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxGravedad = document.getElementById('chartColectivoGravedad');
+  if (ctxGravedad && Object.keys(gravedad).length > 0) {
+    new Chart(ctxGravedad, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(gravedad),
+        datasets: [{
+          data: Object.values(gravedad),
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.85)',
+            'rgba(255, 152, 0, 0.85)',
+            'rgba(244, 67, 54, 0.85)',
+            'rgba(156, 39, 176, 0.85)'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { 
+            position: 'right',
+            labels: { 
+              padding: 18, 
+              font: { size: 13, weight: '700' } 
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxPasajeros = document.getElementById('chartColectivoPasajeros');
+  if (ctxPasajeros) {
+    const pasajeros = {};
+    datos.forEach(row => {
+      const pas = row[COLUMNAS.COLECTIVO_PASAJEROS] || 'No especificado';
+      pasajeros[pas] = (pasajeros[pas] || 0) + 1;
+    });
+    
+    if (Object.keys(pasajeros).length > 0) {
+      new Chart(ctxPasajeros, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(pasajeros),
+          datasets: [{
+            label: 'Incidentes',
+            data: Object.values(pasajeros),
+            backgroundColor: 'rgba(33, 150, 243, 0.85)',
+            borderColor: 'rgb(25, 118, 210)',
+            borderWidth: 3,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              padding: 14,
+              titleFont: { size: 15, weight: 'bold' },
+              bodyFont: { size: 14 },
+              borderColor: 'rgba(255,255,255,0.2)',
+              borderWidth: 1
+            }
+          },
+          scales: { 
+            y: { 
+              beginAtZero: true, 
+              ticks: { 
+                precision: 0,
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { 
+                color: 'rgba(0,0,0,0.05)',
+                drawBorder: false
+              }
+            },
+            x: {
+              ticks: {
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  console.log('✅ Gráficas de colectivos creadas');
+}
+
+function generarEstadisticasTaxis(datos, container) {
+  console.log('🚕 Generando estadísticas de taxis...');
+  
+  const totalIncidentes = datos.length;
+  const totalFallecidos = datos.reduce((sum, row) => 
+    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
+  );
+  
+  const tipos = {};
+  datos.forEach(row => {
+    const tipo = row[COLUMNAS.TAXI_TIPO] || 'No especificado';
+    tipos[tipo] = (tipos[tipo] || 0) + 1;
+  });
+  
+  const colores = {};
+  datos.forEach(row => {
+    const color = row[COLUMNAS.TAXI_COLOR] || 'No especificado';
+    colores[color] = (colores[color] || 0) + 1;
+  });
+  
+  const estados = {};
+  datos.forEach(row => {
+    const estado = row[COLUMNAS.TAXI_ESTADO] || 'No especificado';
+    estados[estado] = (estados[estado] || 0) + 1;
+  });
+  
+  container.innerHTML = `
+    <div class="transport-specific-header">
+      <h3>
+        🚕 Análisis Detallado de Taxis
+        <span class="transport-type-badge">Taxis</span>
+      </h3>
+    </div>
+    
+    <div class="transport-metrics-grid">
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="transport-metric-value">${totalIncidentes}</div>
+        <div class="transport-metric-label">Total de Incidentes</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-skull"></i></div>
+        <div class="transport-metric-value">${totalFallecidos}</div>
+        <div class="transport-metric-label">Total de Fallecidos</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-car"></i></div>
+        <div class="transport-metric-value">${Object.keys(tipos).length}</div>
+        <div class="transport-metric-label">Tipos de Taxi</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-percentage"></i></div>
+        <div class="transport-metric-value">${totalIncidentes > 0 ? ((totalFallecidos / totalIncidentes) * 100).toFixed(1) : 0}%</div>
+        <div class="transport-metric-label">Tasa de Letalidad</div>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-car"></i> Tipos de Taxi</h4>
+        <canvas id="chartTaxiTipos"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-palette"></i> Colores de Taxi</h4>
+        <canvas id="chartTaxiColores"></canvas>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-heartbeat"></i> Estado de los Taxis</h4>
+        <canvas id="chartTaxiEstados"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-users"></i> Pasajeros Involucrados</h4>
+        <canvas id="chartTaxiPasajeros"></canvas>
+      </div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    crearGraficasTaxis(datos, tipos, colores, estados);
+  }, 100);
+  
+  console.log('✅ Estadísticas de taxis generadas');
+}
+
+function crearGraficasTaxis(datos, tipos, colores, estados) {
+  console.log('📊 Creando gráficas de taxis...');
+  
+  const ctxTipos = document.getElementById('chartTaxiTipos');
+  if (ctxTipos && Object.keys(tipos).length > 0) {
+    new Chart(ctxTipos, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(tipos),
+        datasets: [{
+          label: 'Incidentes',
+          data: Object.values(tipos),
+          backgroundColor: 'rgba(33, 150, 243, 0.85)',
+          borderColor: 'rgb(25, 118, 210)',
+          borderWidth: 3,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        },
+        scales: { 
+          y: { 
+            beginAtZero: true, 
+            ticks: { 
+              precision: 0,
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { 
+              color: 'rgba(0,0,0,0.05)',
+              drawBorder: false
+            }
+          },
+          x: {
+            ticks: {
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxColores = document.getElementById('chartTaxiColores');
+  if (ctxColores && Object.keys(colores).length > 0) {
+    new Chart(ctxColores, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(colores),
+        datasets: [{
+          data: Object.values(colores),
+          backgroundColor: [
+            'rgba(255, 193, 7, 0.85)',
+            'rgba(33, 150, 243, 0.85)',
+            'rgba(244, 67, 54, 0.85)',
+            'rgba(76, 175, 80, 0.85)',
+            'rgba(156, 39, 176, 0.85)'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { 
+            position: 'right',
+            labels: { 
+              padding: 18, 
+              font: { size: 13, weight: '700' } 
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxEstados = document.getElementById('chartTaxiEstados');
+  if (ctxEstados && Object.keys(estados).length > 0) {
+    new Chart(ctxEstados, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(estados),
+        datasets: [{
+          data: Object.values(estados),
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.85)',
+            'rgba(255, 193, 7, 0.85)',
+            'rgba(244, 67, 54, 0.85)',
+            'rgba(33, 150, 243, 0.85)'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { 
+            position: 'right',
+            labels: { 
+              padding: 18, 
+              font: { size: 13, weight: '700' } 
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxPasajeros = document.getElementById('chartTaxiPasajeros');
+  if (ctxPasajeros) {
+    const pasajeros = {};
+    datos.forEach(row => {
+      const pas = row[COLUMNAS.TAXI_PASAJEROS] || 'No especificado';
+      pasajeros[pas] = (pasajeros[pas] || 0) + 1;
+    });
+    
+    if (Object.keys(pasajeros).length > 0) {
+      new Chart(ctxPasajeros, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(pasajeros),
+          datasets: [{
+            label: 'Incidentes',
+            data: Object.values(pasajeros),
+            backgroundColor: 'rgba(255, 152, 0, 0.85)',
+            borderColor: 'rgb(245, 124, 0)',
+            borderWidth: 3,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              padding: 14,
+              titleFont: { size: 15, weight: 'bold' },
+              bodyFont: { size: 14 },
+              borderColor: 'rgba(255,255,255,0.2)',
+              borderWidth: 1
+            }
+          },
+          scales: { 
+            y: { 
+              beginAtZero: true, 
+              ticks: { 
+                precision: 0,
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { 
+                color: 'rgba(0,0,0,0.05)',
+                drawBorder: false
+              }
+            },
+            x: {
+              ticks: {
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  console.log('✅ Gráficas de taxis creadas');
+}
+
+function generarEstadisticasMototaxis(datos, container) {
+  console.log('🛵 Generando estadísticas de mototaxis...');
+  
+  const totalIncidentes = datos.length;
+  const totalFallecidos = datos.reduce((sum, row) => 
+    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
+  );
+  
+  const maniobras = {};
+  datos.forEach(row => {
+    const man = row[COLUMNAS.MOTOTAXI_MANIOBRA] || 'No especificada';
+    maniobras[man] = (maniobras[man] || 0) + 1;
+  });
+  
+  const estados = {};
+  datos.forEach(row => {
+    const estado = row[COLUMNAS.MOTOTAXI_ESTADO] || 'No especificado';
+    estados[estado] = (estados[estado] || 0) + 1;
+  });
+  
+  container.innerHTML = `
+    <div class="transport-specific-header">
+      <h3>
+        🛵 Análisis Detallado de Mototaxis
+        <span class="transport-type-badge">Mototaxis</span>
+      </h3>
+    </div>
+    
+    <div class="transport-metrics-grid">
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="transport-metric-value">${totalIncidentes}</div>
+        <div class="transport-metric-label">Total de Incidentes</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-skull"></i></div>
+        <div class="transport-metric-value">${totalFallecidos}</div>
+        <div class="transport-metric-label">Total de Fallecidos</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-motorcycle"></i></div>
+        <div class="transport-metric-value">${Object.keys(maniobras).length}</div>
+        <div class="transport-metric-label">Tipos de Maniobra</div>
+      </div>
+      <div class="transport-metric-card">
+        <div class="transport-metric-icon"><i class="fas fa-percentage"></i></div>
+        <div class="transport-metric-value">${totalIncidentes > 0 ? ((totalFallecidos / totalIncidentes) * 100).toFixed(1) : 0}%</div>
+        <div class="transport-metric-label">Tasa de Letalidad</div>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-route"></i> Maniobras Realizadas</h4>
+        <canvas id="chartMototaxiManiobras"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-heartbeat"></i> Estado de los Mototaxis</h4>
+        <canvas id="chartMototaxiEstados"></canvas>
+      </div>
+    </div>
+    
+    <div class="transport-charts-container">
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-users"></i> Pasajeros Involucrados</h4>
+        <canvas id="chartMototaxiPasajeros"></canvas>
+      </div>
+      <div class="transport-chart-card">
+        <h4><i class="fas fa-user-shield"></i> Comportamiento del Conductor</h4>
+        <canvas id="chartMototaxiConductor"></canvas>
+      </div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    crearGraficasMototaxis(datos, maniobras, estados);
+  }, 100);
+  
+  console.log('✅ Estadísticas de mototaxis generadas');
+}
+
+function crearGraficasMototaxis(datos, maniobras, estados) {
+  console.log('📊 Creando gráficas de mototaxis...');
+  
+  const ctxManiobras = document.getElementById('chartMototaxiManiobras');
+  if (ctxManiobras && Object.keys(maniobras).length > 0) {
+    new Chart(ctxManiobras, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(maniobras),
+        datasets: [{
+          label: 'Incidentes',
+          data: Object.values(maniobras),
+          backgroundColor: 'rgba(76, 175, 80, 0.85)',
+          borderColor: 'rgb(56, 142, 60)',
+          borderWidth: 3,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        },
+        scales: { 
+          x: { 
+            beginAtZero: true, 
+            ticks: { 
+              precision: 0,
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { 
+              color: 'rgba(0,0,0,0.05)',
+              drawBorder: false
+            }
+          },
+          y: {
+            ticks: {
+              font: { size: 12, weight: '600' },
+              color: '#666'
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxEstados = document.getElementById('chartMototaxiEstados');
+  if (ctxEstados && Object.keys(estados).length > 0) {
+    new Chart(ctxEstados, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(estados),
+        datasets: [{
+          data: Object.values(estados),
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.85)',
+            'rgba(255, 193, 7, 0.85)',
+            'rgba(244, 67, 54, 0.85)',
+            'rgba(33, 150, 243, 0.85)'
+          ],
+          borderWidth: 4,
+          borderColor: '#ffffff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { 
+          legend: { 
+            position: 'right',
+            labels: { 
+              padding: 18, 
+              font: { size: 13, weight: '700' } 
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            padding: 14,
+            titleFont: { size: 15, weight: 'bold' },
+            bodyFont: { size: 14 },
+            borderColor: 'rgba(255,255,255,0.2)',
+            borderWidth: 1
+          }
+        }
+      }
+    });
+  }
+  
+  const ctxPasajeros = document.getElementById('chartMototaxiPasajeros');
+  if (ctxPasajeros) {
+    const pasajeros = {};
+    datos.forEach(row => {
+      const pas = row[COLUMNAS.MOTOTAXI_PASAJEROS] || 'No especificado';
+      pasajeros[pas] = (pasajeros[pas] || 0) + 1;
+    });
+    
+    if (Object.keys(pasajeros).length > 0) {
+      new Chart(ctxPasajeros, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(pasajeros),
+          datasets: [{
+            label: 'Incidentes',
+            data: Object.values(pasajeros),
+            backgroundColor: 'rgba(33, 150, 243, 0.85)',
+            borderColor: 'rgb(25, 118, 210)',
+            borderWidth: 3,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              padding: 14,
+              titleFont: { size: 15, weight: 'bold' },
+              bodyFont: { size: 14 },
+              borderColor: 'rgba(255,255,255,0.2)',
+              borderWidth: 1
+            }
+          },
+          scales: { 
+            y: { 
+              beginAtZero: true, 
+              ticks: { 
+                precision: 0,
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { 
+                color: 'rgba(0,0,0,0.05)',
+                drawBorder: false
+              }
+            },
+            x: {
+              ticks: {
+                font: { size: 12, weight: '600' },
+                color: '#666'
+              },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  const ctxConductor = document.getElementById('chartMototaxiConductor');
+  if (ctxConductor) {
+    const conductor = {};
+    datos.forEach(row => {
+      const comp = row[COLUMNAS.MOTOTAXI_CONDUCTOR] || 'No especificado';
+      conductor[comp] = (conductor[comp] || 0) + 1;
+    });
+    
+    if (Object.keys(conductor).length > 0) {
+      new Chart(ctxConductor, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(conductor),
+          datasets: [{
+            data: Object.values(conductor),
+            backgroundColor: [
+              'rgba(76, 175, 80, 0.85)',
+              'rgba(255, 193, 7, 0.85)',
+              'rgba(244, 67, 54, 0.85)',
+              'rgba(156, 39, 176, 0.85)',
+              'rgba(33, 150, 243, 0.85)'
+            ],
+            borderWidth: 4,
+            borderColor: '#ffffff',
+            hoverOffset: 15
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            legend: { 
+              position: 'right',
+              labels: { 
+                padding: 18, 
+                font: { size: 13, weight: '700' } 
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              padding: 14,
+              titleFont: { size: 15, weight: 'bold' },
+              bodyFont: { size: 14 },
+              borderColor: 'rgba(255,255,255,0.2)',
+              borderWidth: 1
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  console.log('✅ Gráficas de mototaxis creadas');
+}
+
+function inicializarTransportePublico() {
+  console.log('\n🚀 ========== INICIALIZANDO TRANSPORTE PÚBLICO ==========');
+  
+  datosTransporteCache = null;
+  
+  if (!document.getElementById('vistaGeneralTransporte')) {
+    console.error('❌ No se encontró el elemento vistaGeneralTransporte');
+    return;
+  }
+  
+  contarRegistrosTransporte();
+  generarVistaGeneralTransporte();
+  
+  console.log('========== FIN INICIALIZACIÓN TRANSPORTE PÚBLICO ==========\n');
+}
+
+window.cambiarTransporteFiltro = cambiarTransporteFiltro;
+window.limpiarFiltroTransporte = limpiarFiltroTransporte;
+window.inicializarTransportePublico = inicializarTransportePublico;
+
 // ============================================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN DEL SISTEMA
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('Inicializando sistema de estadísticas avanzadas interactivo...');
+  console.log('\n🚀 ========== INICIALIZANDO SISTEMA ==========');
+  console.log('⏰ Timestamp:', new Date().toISOString());
+  console.log('📍 Página: estadisticas.html');
   
   cargarDatos();
   
@@ -1969,105 +4049,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  console.log('Sistema de estadísticas interactivo inicializado');
+  console.log('✅ Sistema inicializado correctamente');
+  console.log('========== FIN INICIALIZACIÓN ==========\n');
 });
-
-
-/* ============================================================
-   FUNCIONES NUEVAS PARA COPIAR Y PEGAR
-   Agregar estas funciones ANTES de la función cargarDatos()
-   Sugerencia: Línea 650-700 aproximadamente
-   ============================================================ */
-
-// ⭐ FUNCIÓN NUEVA #1: Generar el selector de municipios
-function generarSelectorMunicipios() {
-  const municipios = {};
-  
-  // Obtener todos los municipios únicos con su conteo
-  allIncidentsData.forEach(row => {
-    const municipio = row[COLUMNAS.MUNICIPIO] || 'Desconocido';
-    municipios[municipio] = (municipios[municipio] || 0) + 1;
-  });
-  
-  // Ordenar alfabéticamente
-  const municipiosOrdenados = Object.entries(municipios)
-    .sort((a, b) => a[0].localeCompare(b[0]));
-  
-  // Generar opciones del select
-  const selector = document.getElementById('filtroMunicipio');
-  if (!selector) {
-    console.warn('⚠️ No se encontró el elemento filtroMunicipio');
-    return;
-  }
-  
-  // Limpiar y agregar opción por defecto
-  selector.innerHTML = '<option value="">Todos los municipios</option>';
-  
-  // Agregar cada municipio con su conteo
-  municipiosOrdenados.forEach(([municipio, cantidad]) => {
-    const option = document.createElement('option');
-    option.value = municipio;
-    option.textContent = `${municipio} (${cantidad})`;
-    selector.appendChild(option);
-  });
-  
-  console.log(`✅ ${municipiosOrdenados.length} municipios cargados en el selector`);
-}
-
-// ⭐ FUNCIÓN MEJORADA: Manejar cambios en el selector de municipios
-function cambiarFiltroMunicipio() {
-  const selector = document.getElementById('filtroMunicipio');
-  if (!selector) return;
-  
-  const municipio = selector.value;
-  
-  if (municipio === '') {
-    filtrosActivos.municipio = null;
-    
-    const indicador = document.getElementById('filtrosCruzadosIndicador');
-    if (indicador) indicador.style.display = 'none';
-    
-    // ⭐ Actualizar TODO incluyendo resumen general
-    actualizarEstadisticasFiltro();
-    actualizarResumenGeneral();
-    actualizarDashboardConFiltros();
-    
-    mostrarNotificacion('Mostrando todos los municipios', 'info', 2000);
-  } else {
-    aplicarFiltroCruzado('municipio', municipio);
-    actualizarEstadisticasFiltro();
-    actualizarResumenGeneral();  // ⭐ NUEVO
-  }
-}
-
-// ⭐ NUEVA FUNCIÓN: Actualizar estadísticas del filtro
-function actualizarEstadisticasFiltro() {
-  const statsContainer = document.querySelector('.filtro-stats');
-  if (!statsContainer) return;
-  
-  const datosFiltrados = obtenerDatosFiltrados();
-  const totalIncidentes = datosFiltrados.length;
-  const totalFallecidos = datosFiltrados.reduce((sum, row) => 
-    sum + parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0), 0
-  );
-  
-  if (filtrosActivos.municipio) {
-    statsContainer.innerHTML = `
-      <div class="stat-mini">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>${totalIncidentes} incidentes en este municipio</span>
-      </div>
-      <div class="stat-mini">
-        <i class="fas fa-skull"></i>
-        <span>${totalFallecidos} fallecidos</span>
-      </div>
-    `;
-  } else {
-    statsContainer.innerHTML = `
-      <div class="stat-mini">
-        <i class="fas fa-database"></i>
-        <span>${allIncidentsData.length} incidentes totales</span>
-      </div>
-    `;
-  }
-}
