@@ -233,7 +233,7 @@
           </label>
 
           <label><i class="fas fa-user"></i> Usuario involucrado (1)
-            <select name="Usuario_involucrado (1)">
+            <select name="Usuario_involucrado (1)" id="usuario1">
               <option value="">-- Selecciona --</option>
               <option>Peatón</option>
               <option>Ciclista</option>
@@ -246,7 +246,7 @@
           </label>
 
           <label><i class="fas fa-users"></i> Usuario involucrado (2)
-            <select name="Usuario_involucrado (2)">
+            <select name="Usuario_involucrado (2)" id="usuario2">
               <option value="">-- Selecciona --</option>
               <option>Peatón</option>
               <option>Ciclista</option>
@@ -258,64 +258,354 @@
             </select>
           </label>
 
-          <!-- Menú dinámico para transporte público -->
-          <div id="transportePublicoDiv" style="grid-column: 1 / -1; display: none;">
-            <fieldset class="fieldset-grupo">
-              <legend><i class="fas fa-bus"></i> Información de Transporte Público</legend>
-              
-              <label><i class="fas fa-taxi"></i> Tipo de transporte público
-                <select id="Tipo_de_Transporte">
-                  <option value="">-- Selecciona --</option>
-                  <option value="Taxi">Taxi</option>
-                  <option value="Colectivo">Colectivo</option>
-                </select>
-              </label>
+<!-- ============================================================
+     SECCIÓN CONDICIONAL: TRANSPORTE PÚBLICO - VERSIÓN SIMPLIFICADA
+     ============================================================ -->
+<div id="transportePublicoDiv" style="grid-column: 1 / -1; display: none;">
+  
+  <!-- Selector de Tipo de Transporte Público -->
+  <fieldset class="fieldset-grupo transport-type-selector">
+    <legend><i class="fas fa-bus"></i> Información de Transporte Público</legend>
+    
+    <div style="text-align: center; margin-bottom: 25px;">
+      <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+        <i class="fas fa-info-circle"></i> Selecciona el tipo de transporte involucrado en el siniestro
+      </p>
+    </div>
+    
+    <div class="transport-options">
+      <label class="transport-option">
+        <input type="radio" name="tipoTransportePublico" value="colectivo" onchange="mostrarCamposTransporte()">
+        <div class="option-card">
+          <div class="option-icon">🚌</div>
+          <div class="option-text">Colectivo</div>
+        </div>
+      </label>
+      
+      <label class="transport-option">
+        <input type="radio" name="tipoTransportePublico" value="taxi" onchange="mostrarCamposTransporte()">
+        <div class="option-card">
+          <div class="option-icon">🚕</div>
+          <div class="option-text">Taxi</div>
+        </div>
+      </label>
+      
+      <label class="transport-option">
+        <input type="radio" name="tipoTransportePublico" value="mototaxi" onchange="mostrarCamposTransporte()">
+        <div class="option-card">
+          <div class="option-icon">🛵</div>
+          <div class="option-text">Mototaxi</div>
+        </div>
+      </label>
+    </div>
+  </fieldset>
 
-              <label><i class="fas fa-search"></i> Placas del vehículo
-                <input type="text" id="placaTransporte" placeholder="Ej. DRT-123-A">
-                <button type="button" onclick="buscarConductor()">Buscar</button>
-              </label>
+  <!-- ============================================================
+       CAMPOS PARA COLECTIVOS
+       ============================================================ -->
+  <div id="camposColectivo" class="transport-fields" style="display: none;">
+    <fieldset class="fieldset-grupo">
+      <legend><i class="fas fa-bus"></i> Información del Colectivo</legend>
+      
+      <label><i class="fas fa-hashtag"></i> Número Económico de la Unidad *
+        <input type="text" id="colectivoNumero" name="Colectivo_Numero_Economico" placeholder="Ej: 1234, A-456">
+      </label>
+      
+      <label><i class="fas fa-route"></i> Número de Ruta *
+        <input type="text" id="colectivoRuta" name="Colectivo_Numero_Ruta" placeholder="Ej: Ruta 5">
+      </label>
+      
+      <label><i class="fas fa-hand-paper"></i> Maniobra que Realizaba *
+        <select id="colectivoManiobra" name="Colectivo_Maniobra">
+          <option value="">-- Selecciona --</option>
+          <option value="Circulando normalmente">Circulando normalmente</option>
+          <option value="Detenido (pasajeros)">Detenido subiendo/bajando pasajeros</option>
+          <option value="Arrancando">Arrancando desde parada</option>
+          <option value="Frenando bruscamente">Frenando bruscamente</option>
+          <option value="Rebasando">Rebasando a otro vehículo</option>
+          <option value="Dando vuelta">Dando vuelta</option>
+          <option value="Otra maniobra">Otra maniobra</option>
+        </select>
+      </label>
+      
+      <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor *
+        <select id="colectivoConductor" name="Colectivo_Comportamiento_Conductor">
+          <option value="">-- Selecciona --</option>
+          <option value="Conducción normal">Conducción normal</option>
+          <option value="Exceso de velocidad">Exceso de velocidad</option>
+          <option value="Competencia (pique)">Competencia con otra unidad </option>
+          <option value="Uso de celular">Uso de celular mientras conducía</option>
+          <option value="Conducción agresiva">Conducción agresiva</option>
+          <option value="Influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+          <option value="Saltó alto/semáforo">Se saltó alto/semáforo</option>
+          <option value="No respetó señalización">No respetó señalización</option>
+        </select>
+      </label>
+      
+      <label><i class="fas fa-tools"></i> Estado Aparente de la Unidad *
+        <select id="colectivoEstado" name="Colectivo_Estado">
+          <option value="">-- Selecciona --</option>
+          <option value="Bueno">Buen estado (bien mantenido)</option>
+          <option value="Regular">Regular (desgaste visible)</option>
+          <option value="Malo">Mal estado (muy deteriorado)</option>
+          <option value="No observé">No me fijé</option>
+        </select>
+      </label>
+      
+      <label><i class="fas fa-users"></i> Número de Pasajeros a Bordo *
+        <select id="colectivoPasajeros" name="Colectivo_Pasajeros">
+          <option value="">-- Selecciona --</option>
+          <option value="Vacío">Vacío</option>
+          <option value="Pocos">Pocos pasajeros</option>
+          <option value="Lleno">Lleno </option>
+          <option value="Sobrecupo">Con sobrecupo</option>
+          <option value="No observé">No observé</option>
+        </select>
+      </label>
+      
+      <label><i class="fas fa-exclamation-triangle"></i> Gravedad del Accidente *
+        <select id="colectivoGravedad" name="Colectivo_Gravedad">
+          <option value="">-- Selecciona --</option>
+          <option value="Solo daños materiales">Solo daños materiales</option>
+          <option value="Heridos leves">Heridos leves</option>
+          <option value="Heridos graves">Heridos graves</option>
+          <option value="Fallecidos">Con fallecidos</option>
+          <option value="No lo sé">No lo sé</option>
+        </select>
+      </label>
+    </fieldset>
+  </div>
 
-              <div id="datosConductorDiv" style="display: none; margin-top: 20px;">
-                <h3><i class="fas fa-id-card"></i> Datos del conductor</h3>
-                <label><i class="fas fa-user-tie"></i> Concesionado
-                  <input type="text" id="campoConcesionado" name="Concesionado" readonly>
-                </label>
-                <label><i class="fas fa-hashtag"></i> No. Económico
-                  <input type="text" id="campoNoEconomico" name="No_Economico" readonly>
-                </label>
-                <label><i class="fas fa-file-contract"></i> Concesión
-                  <input type="text" id="campoConcesion" name="Concesion" readonly>
-                </label>
-                <label><i class="fas fa-tags"></i> Modalidad
-                  <input type="text" id="campoModalidad" name="Modalidad" readonly>
-                </label>
-                <label><i class="fas fa-car"></i> Placa
-                  <input type="text" id="campoPlaca" name="Placa_del_conductor" readonly>
-                </label>
-                <label><i class="fas fa-industry"></i> Marca
-                  <input type="text" id="campoMarca" name="Marca" readonly>
-                </label>
-                <label><i class="fas fa-cube"></i> Tipo
-                  <input type="text" id="campoTipo" name="Tipo" readonly>
-                </label>
-                <label><i class="fas fa-cog"></i> Motor
-                  <input type="text" id="campoMotor" name="Motor" readonly>
-                </label>
-                <label><i class="fas fa-barcode"></i> Serie
-                  <input type="text" id="campoSerie" name="Serie" readonly>
-                </label>
-                <label><i class="fas fa-calendar"></i> Modelo
-                  <input type="text" id="campoModelo" name="Modelo" readonly>
-                </label>
-              </div>
-            </fieldset>
-          </div>
+
+  <!-- ============================================================
+       CAMPOS PARA TAXIS
+       ============================================================ -->
+  <div id="camposTaxi" class="transport-fields" style="display: none;">
+    <fieldset class="fieldset-grupo">
+      <legend><i class="fas fa-taxi"></i> Información del Taxi</legend>
+      
+      <label><i class="fas fa-hashtag"></i> Número Económico de la Unidad *
+        <input type="text" id="taxiNumero" name="Taxi_Numero_Economico" placeholder="Ej: 1234, TX-456">
+      </label>
+
+      <label><i class="fas fa-taxi"></i> Tipo de Taxi *
+        <select id="taxiTipo" name="Taxi_Tipo" onchange="mostrarCampoSitioTaxi()">
+          <option value="">-- Selecciona --</option>
+          <option value="Taxi libre">Taxi libre</option>
+          <option value="Taxi de base">Taxi de base</option>
+          <option value="Taxi de app">Taxi de aplicación (Uber/Didi/InDrive)</option>
+          <option value="No lo sé">No lo sé</option>
+        </select>
+      </label>
+
+      <!-- CAMPO CONDICIONAL: Solo si es Taxi de Base -->
+      <div id="grupoSitioTaxi" style="display: none; grid-column: 1 / -1;">
+        <label><i class="fas fa-map-marker-alt"></i> Sitio / Base del Taxi *
+          <select id="taxiSitio" name="Taxi_Sitio_Base" onchange="mostrarCampoOtroSitio()">
+            <option value="">-- Selecciona --</option>
+            <option value="Sitio Centro">Sitio Centro</option>
+            <option value="Sitio Marimba">Sitio Marimba</option>
+            <option value="Sitio Plaza Crystal">Sitio Plaza Crystal</option>
+            <option value="Sitio Terán">Sitio Terán</option>
+            <option value="Sitio Plaza las Américas">Sitio Plaza las Américas</option>
+            <option value="Otro sitio">Otro sitio</option>
+            <option value="No aplica / No lo sé">No aplica / No lo sé</option>
+          </select>
+        </label>
+
+        <!-- Campo adicional que aparece solo si selecciona "Otro sitio" -->
+        <div id="campoOtroSitio" style="display: none; margin-top: 10px;">
+          <label><i class="fas fa-edit"></i> Especifica el Sitio *
+            <input type="text" id="taxiOtroSitio" name="Taxi_Otro_Sitio" placeholder="Escribe el nombre del sitio o base">
+          </label>
+        </div>
+      </div>
+
+      <label><i class="fas fa-palette"></i> Color del Taxi *
+  <select id="taxiColor" name="Taxi_Color" onchange="mostrarCampoOtroColor()">
+    <option value="">-- Selecciona --</option>
+    <option value="Blanco">Blanco</option>
+    <option value="Amarillo">Amarillo</option>
+    <option value="Blanco con amarillo">Blanco con amarillo</option>
+    <option value="Verde (Ecotaxi)">Verde (Ecotaxi)</option>
+    <option value="Otro color">Otro color</option>
+  </select>
+      </label>
+
+<!-- Campo adicional que aparece solo si selecciona "Otro color" -->
+<div id="campoOtroColor" style="display: none;">
+  <label><i class="fas fa-palette"></i> Especifica el Color *
+    <input type="text" id="taxiOtroColor" name="Taxi_Otro_Color" placeholder="Ej: Rojo, Azul, Gris">
+  </label>
+</div>
+
+      <label><i class="fas fa-users"></i> ¿Llevaba Pasajeros? *
+  <select id="taxiPasajeros" name="Taxi_Llevaba_Pasajeros" onchange="mostrarCampoNumeroPasajeros()">
+    <option value="">-- Selecciona --</option>
+    <option value="Sí">Sí, llevaba pasajero(s)</option>
+    <option value="No">No, iba vacío</option>
+    <option value="No observé">No observé / No sé</option>
+  </select>
+</label>
+
+<!-- CAMPO CONDICIONAL: Solo si llevaba pasajeros -->
+<div id="grupoNumeroPasajeros" style="display: none;">
+  <label><i class="fas fa-user-friends"></i> Número Aproximado de Pasajeros *
+    <select id="taxiNumeroPasajeros" name="Taxi_Numero_Pasajeros">
+      <option value="">-- Selecciona --</option>
+      <option value="1 pasajero">1 pasajero</option>
+      <option value="2 pasajeros">2 pasajeros</option>
+      <option value="3 pasajeros">3 pasajeros</option>
+      <option value="4 o más (sobrecupo)">4 o más (sobrecupo)</option>
+      <option value="No lo vi">No lo vi</option>
+    </select>
+  </label>
+</div>
+
+      <label><i class="fas fa-hand-paper"></i> Maniobra que Realizaba *
+        <select id="taxiManiobra" name="Taxi_Maniobra">
+          <option value="">-- Selecciona --</option>
+          <option value="Circulando">Circulando normalmente</option>
+          <option value="Parada pasajero">Subiendo/bajando pasajero</option>
+          <option value="Buscando pasaje">Buscando pasaje</option>
+          <option value="Arrancando">Arrancando</option>
+          <option value="Estacionándose">Estacionándose</option>
+          <option value="Vuelta en U">Dando vuelta en U</option>
+          <option value="Rebasando">Rebasando</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor *
+        <select id="taxiConductor" name="Taxi_Comportamiento_Conductor">
+          <option value="">-- Selecciona --</option>
+          <option value="Conducción normal">Conducción normal</option>
+          <option value="Exceso de velocidad">Exceso de velocidad</option>
+          <option value="Usando celular">Usando celular</option>
+          <option value="Frenó bruscamente">Frenó/arrancó bruscamente</option>
+          <option value="Se atravesó">Se atravesó sin precaución</option>
+          <option value="Vuelta sin señal">No respeto la señalización</option>
+          <option value="Vuelta sin señal">Bajo influencia aparente del alcohol/drogas</option>
+          <option value="Se pasó alto">Se pasó alto/semáforo</option>
+          <option value="Conducción agresiva">Conducción agresiva</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-tools"></i> Estado Aparente del Taxi *
+        <select id="taxiEstado" name="Taxi_Estado">
+          <option value="">-- Selecciona --</option>
+          <option value="Bueno">Buen estado (limpio, bien mantenido)</option>
+          <option value="Regular">Regular (con desgaste visible)</option>
+          <option value="Malo">Mal estado (deteriorado)</option>
+          <option value="No observé">No me fijé / No observé</option>
+        </select>
+      </label>
+    </fieldset>
+  </div>
+
+<!-- ============================================================
+       CAMPOS PARA MOTOTAXIS
+       ============================================================ -->
+  <div id="camposMototaxi" class="transport-fields" style="display: none;">
+    <fieldset class="fieldset-grupo">
+      <legend><i class="fas fa-motorcycle"></i> Información del Mototaxi</legend>
+      
+      <label><i class="fas fa-hashtag"></i> Número Económico *
+        <input type="text" id="mototaxiNumero" name="Mototaxi_Numero_Economico" placeholder="Ej: MT-123, 456">
+      </label>
+
+      <label><i class="fas fa-users"></i> ¿Llevaba Pasajeros? *
+        <select id="mototaxiPasajeros" name="Mototaxi_Llevaba_Pasajeros" onchange="mostrarCampoNumeroPasajerosMototaxi()">
+          <option value="">-- Selecciona --</option>
+          <option value="Sí">Sí, llevaba pasajero(s)</option>
+          <option value="No">No, iba vacío</option>
+          <option value="No observé">No observé / No sé</option>
+        </select>
+      </label>
+
+      <!-- CAMPO CONDICIONAL: Solo si llevaba pasajeros -->
+      <div id="grupoNumeroPasajerosMototaxi" style="display: none;">
+        <label><i class="fas fa-user-friends"></i> Número Aproximado de Pasajeros *
+          <select id="mototaxiNumeroPasajeros" name="Mototaxi_Numero_Pasajeros">
+            <option value="">-- Selecciona --</option>
+            <option value="1 pasajero">1 pasajero</option>
+            <option value="2 pasajeros">2 pasajeros</option>
+            <option value="3 o más (sobrecupo)">3 o más</option>
+            <option value="No lo vi">No lo vi</option>
+          </select>
+        </label>
+      </div>
+
+      <label><i class="fas fa-hand-paper"></i> Maniobra que Realizaba *
+        <select id="mototaxiManiobra" name="Mototaxi_Maniobra">
+          <option value="">-- Selecciona --</option>
+          <option value="Circulando">Circulando normalmente</option>
+          <option value="Parada pasajero">Subiendo/bajando pasajero</option>
+          <option value="Buscando pasaje">Buscando pasaje</option>
+          <option value="Arrancando">Arrancando</option>
+          <option value="Entre tráfico">Circulando entre el tráfico</option>
+          <option value="Rebasando por derecha">Rebasando por la derecha</option>
+          <option value="Vuelta cerrada">Dando vuelta cerrada</option>
+          <option value="Por banqueta">Circulando por banqueta</option>
+          <option value="Sentido contrario">Circulando en sentido contrario</option>
+          <option value="Zigzagueando">Zigzagueando entre vehículos</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor *
+        <select id="mototaxiConductor" name="Mototaxi_Comportamiento_Conductor">
+          <option value="">-- Selecciona --</option>
+          <option value="Conducción normal">Conducción normal</option>
+          <option value="Exceso velocidad">Exceso de velocidad</option>
+          <option value="Usando celular">Usando celular</option>
+          <option value="Rebasó por derecha">Rebasó por la derecha</option>
+          <option value="Se atravesó">Se atravesó sin precaución</option>
+          <option value="Pasó semáforo">No respetó semáforo/alto</option>
+          <option value="Por banqueta">Circuló por banqueta</option>
+          <option value="Sentido contrario">Circuló en sentido contrario</option>
+          <option value="Zigzagueo">Zigzagueo peligroso</option>
+          <option value="Frenando">Frenó de repente</option>
+          <option value="Bajo influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+          <option value="Conducción agresiva">Conducción agresiva</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-tools"></i> Estado Aparente del Mototaxi *
+        <select id="mototaxiEstado" name="Mototaxi_Estado">
+          <option value="">-- Selecciona --</option>
+          <option value="Bueno">Buen estado (bien mantenido)</option>
+          <option value="Regular">Regular (con desgaste visible)</option>
+          <option value="Malo">Mal estado (deteriorado)</option>
+          <option value="Muy malo">Muy mal estado (peligroso)</option>
+          <option value="No observé">No me fijé / No observé</option>
+        </select>
+      </label>
+    </fieldset>
+  </div>
+
+</div>
+<!-- FIN SECCIÓN TRANSPORTE PÚBLICO -->
 
           <label><i class="fas fa-calculator"></i> Total de usuarios involucrados
             <input type="number" name="Total_de_usuarios_involucrados" min="0">
           </label>
 
+          <label><i class="fas fa-ambulance"></i> Total de Heridos
+  <input type="number" name="Total_de_heridos" min="" placeholder="0">
+</label>
+
+         <label><i class="fas fa-list-alt"></i> Clasificación de Heridos
+  <select name="Clasificacion_de_usuarios_heridos">
+    <option value="">-- Selecciona --</option>
+    <option>No aplica</option>
+    <option>Peatón</option>
+    <option>Ciclista</option>
+    <option>Motociclista</option>
+    <option>Chofer de transporte público</option>
+    <option>Automovilista</option>
+    <option>Chofer de vehículo pesado</option>
+    <option>Otro</option>
+  </select>
+</label>
           <label><i class="fas fa-skull"></i> Total de fallecidos
             <input type="number" name="Total_de_fallecidos" min="0">
           </label>
