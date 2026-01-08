@@ -1,15 +1,29 @@
 /* ============================================================
-   INDEX.JS PROFESIONAL - SIN EFECTOS DE FLOTACIÓN
+   INDEX.JS PROFESIONAL - ACTUALIZADO CON ÍNDICES CORRECTOS
    Sistema de Siniestros Viales - Estado de Chiapas
    ============================================================ */
 
 // ============================================================
-// CONFIGURACIÓN GLOBAL
+// CONFIGURACIÓN GLOBAL - URL ACTUALIZADA
 // ============================================================
-const MAIN_API_URL = "https://script.google.com/macros/s/AKfycbzLTG8Zo1ayJMapz6rHXK0mUrnLhs6Ar0uk_06DBqhxww0fySCUgZa_u0yubKCbV1deJA/exec";
+const MAIN_API_URL = "https://script.google.com/macros/s/AKfycbyh_f5b6vcLB3_mSQPke9pLtXYrTYJF4mwJnc88CBNDyjrmSNtSfrmOMv5YRoDb7eBS/exec";
 
 let mapaCalor = null;
 let heatLayer = null;
+
+// ============================================================
+// ÍNDICES DE COLUMNAS - DEBEN COINCIDIR CON APPS SCRIPT
+// ============================================================
+const COLUMNAS = {
+  MUNICIPIO: 0,
+  FECHA_SINIESTRO: 1,
+  TIPO_SINIESTRO: 7,
+  CAUSA_SINIESTRO: 8,
+  TOTAL_FALLECIDOS: 39,
+  DIRECCION: 42,
+  COORDENADAS: 43,
+  DESCRIPCION: 46
+};
 
 // ============================================================
 // ANIMACIÓN DE CONTEO PARA NÚMEROS
@@ -19,7 +33,7 @@ function animarConteo(elemento, valorFinal, duracion = 1500) {
   if (!elementoDOM) return;
   
   const valorInicial = 0;
-  const incremento = valorFinal / (duracion / 16); // 60 FPS
+  const incremento = valorFinal / (duracion / 16);
   let valorActual = valorInicial;
   
   const timer = setInterval(() => {
@@ -35,7 +49,7 @@ function animarConteo(elemento, valorFinal, duracion = 1500) {
 }
 
 // ============================================================
-// OBSERVER PARA ANIMACIONES AL SCROLL (SIN FLOTACIÓN)
+// OBSERVER PARA ANIMACIONES AL SCROLL
 // ============================================================
 function inicializarAnimacionesScroll() {
   const observer = new IntersectionObserver((entries) => {
@@ -50,7 +64,6 @@ function inicializarAnimacionesScroll() {
     rootMargin: '0px 0px -30px 0px'
   });
 
-  // Observar elementos que necesitan animación
   document.querySelectorAll('.tarjeta, .stat-item, .info-item').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
@@ -60,60 +73,16 @@ function inicializarAnimacionesScroll() {
 }
 
 // ============================================================
-// VALIDACIÓN DE COORDENADAS PARA TODO CHIAPAS
-// ============================================================
-function validarCoordenadas(coordStr) {
-  if (!coordStr || typeof coordStr !== 'string') return null;
-  
-  const parts = coordStr.split(",");
-  if (parts.length !== 2) return null;
-  
-  const lat = parseFloat(parts[0].trim());
-  const lng = parseFloat(parts[1].trim());
-  
-  // Límites expandidos para cubrir todo el estado de Chiapas
-  if (isNaN(lat) || isNaN(lng) || 
-      lat < 14.2 || lat > 17.8 ||     // Latitud: desde la frontera con Guatemala hasta Tabasco
-      lng < -94.8 || lng > -90.2) {   // Longitud: desde Oaxaca/Veracruz hasta Guatemala
-    return null;
-  }
-  
-  return { lat, lng };
-}
-
-// ============================================================
-// FUNCIÓN ALTERNATIVA - VALIDACIÓN MÁS FLEXIBLE
-// ============================================================
-function validarCoordenadasFlexible(coordStr) {
-  if (!coordStr || typeof coordStr !== 'string') return null;
-  
-  const parts = coordStr.split(",");
-  if (parts.length !== 2) return null;
-  
-  const lat = parseFloat(parts[0].trim());
-  const lng = parseFloat(parts[1].trim());
-  
-  // Validación básica para coordenadas válidas de México
-  if (isNaN(lat) || isNaN(lng) || 
-      lat < 12 || lat > 20 ||         // Límites más amplios para incluir toda la región
-      lng < -96 || lng > -88) {       // Incluye áreas vecinas por si hay datos cerca
-    return null;
-  }
-  
-  return { lat, lng };
-}
-
-// ============================================================
-// LÍMITES ESPECÍFICOS DE CHIAPAS COMO CONSTANTES
+// VALIDACIÓN DE COORDENADAS PARA CHIAPAS
 // ============================================================
 const CHIAPAS_LIMITS = {
-  LAT_MIN: 14.2,  // Frontera sur con Guatemala
-  LAT_MAX: 17.8,  // Frontera norte con Tabasco
-  LNG_MIN: -94.8, // Frontera oeste con Oaxaca/Veracruz
-  LNG_MAX: -90.2  // Frontera este con Guatemala
+  LAT_MIN: 14.2,
+  LAT_MAX: 17.8,
+  LNG_MIN: -94.8,
+  LNG_MAX: -90.2
 };
 
-function validarCoordenadasChiapas(coordStr) {
+function validarCoordenadas(coordStr) {
   if (!coordStr || typeof coordStr !== 'string') return null;
   
   const parts = coordStr.split(",");
@@ -130,6 +99,7 @@ function validarCoordenadasChiapas(coordStr) {
   
   return { lat, lng };
 }
+
 // ============================================================
 // CARGAR ESTADÍSTICAS RÁPIDAS CON ANIMACIONES
 // ============================================================
@@ -137,32 +107,52 @@ async function cargarEstadisticasRapidas() {
   try {
     console.log('🔄 Cargando estadísticas del sistema...');
     
+    // Mostrar indicador de carga
+    document.getElementById('totalIncidentes').textContent = '...';
+    document.getElementById('incidentesMes').textContent = '...';
+    document.getElementById('ultimaActualizacion').textContent = '...';
+    
     const response = await fetch(MAIN_API_URL);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
-    console.log(`📊 Datos recibidos: ${data.length} incidentes`);
+    const result = await response.json();
+    console.log('📦 Respuesta recibida:', result);
+    
+    // Verificar que tenemos datos
+    if (!result.datos || !Array.isArray(result.datos)) {
+      throw new Error('Formato de datos inválido');
+    }
+    
+    const data = result.datos;
+    console.log(`📊 Total de registros: ${data.length}`);
     
     // Animar total de incidentes
     setTimeout(() => {
       animarConteo('totalIncidentes', data.length, 1500);
     }, 300);
     
-    // Incidentes de este mes
+    // Calcular incidentes de este mes
     const mesActual = new Date().getMonth() + 1;
     const añoActual = new Date().getFullYear();
     
     const incidentesMes = data.filter(row => {
-      const fechaStr = row[1];
+      const fechaStr = row[COLUMNAS.FECHA_SINIESTRO];
       if (!fechaStr) return false;
       
-      const fecha = new Date(fechaStr.split(' ')[0]);
-      if (isNaN(fecha)) return false;
-      
-      return fecha.getMonth() + 1 === mesActual && fecha.getFullYear() === añoActual;
+      try {
+        const fecha = new Date(fechaStr);
+        if (isNaN(fecha.getTime())) return false;
+        
+        return fecha.getMonth() + 1 === mesActual && fecha.getFullYear() === añoActual;
+      } catch (e) {
+        return false;
+      }
     }).length;
+    
+    console.log(`📅 Incidentes este mes: ${incidentesMes}`);
     
     // Animar incidentes del mes
     setTimeout(() => {
@@ -200,25 +190,32 @@ async function cargarEstadisticasRapidas() {
       setTimeout(() => {
         el.style.transition = 'all 0.3s ease';
         el.textContent = 'N/A';
+        el.style.color = '#f44336';
       }, index * 100);
     });
     
     // Mostrar error en el mapa
     const mapContainer = document.getElementById('mapaCalorPreview');
     if (mapContainer) {
-      mapContainer.style.opacity = '0';
       mapContainer.innerHTML = `
         <div style="text-align: center; color: #f44336; padding: 40px;">
           <i class="fas fa-exclamation-circle" style="font-size: 3em; margin-bottom: 15px;"></i>
           <p style="font-weight: 600; margin: 0; font-size: 18px;">Error al cargar los datos</p>
-          <p style="font-size: 14px; color: #666; margin-top: 10px;">Por favor, recarga la página</p>
+          <p style="font-size: 14px; color: #666; margin-top: 10px;">${error.message}</p>
+          <button onclick="location.reload()" style="
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+          ">
+            <i class="fas fa-redo"></i> Reintentar
+          </button>
         </div>
       `;
-      
-      setTimeout(() => {
-        mapContainer.style.transition = 'opacity 0.4s ease';
-        mapContainer.style.opacity = '1';
-      }, 100);
     }
   }
 }
@@ -230,25 +227,28 @@ function cargarMapaCalor(data) {
   try {
     console.log('🗺️ Inicializando mapa de calor...');
     
-    // Ocultar indicador de carga con animación
+    // Ocultar indicador de carga
     const loadingDiv = document.querySelector('.mapa-loading');
     if (loadingDiv) {
       loadingDiv.style.transition = 'opacity 0.3s ease';
       loadingDiv.style.opacity = '0';
-      
-      setTimeout(() => {
-        loadingDiv.style.display = 'none';
-      }, 300);
+      setTimeout(() => loadingDiv.style.display = 'none', 300);
     }
     
-    // Verificar que el contenedor existe
+    // Verificar contenedor
     const mapContainer = document.getElementById('mapaCalorPreview');
     if (!mapContainer) {
       console.error('❌ Contenedor del mapa no encontrado');
       return;
     }
     
-    // Inicializar mapa con Leaflet
+    // Limpiar contenedor si ya existe un mapa
+    if (mapaCalor) {
+      mapaCalor.remove();
+      mapaCalor = null;
+    }
+    
+    // Inicializar mapa
     mapaCalor = L.map('mapaCalorPreview', {
       zoomControl: true,
       dragging: true,
@@ -258,7 +258,7 @@ function cargarMapaCalor(data) {
       fadeAnimation: true,
       zoomAnimation: true,
       markerZoomAnimation: true
-    }).setView([16.75, -93.12], 11);
+    }).setView([16.75, -93.12], 10);
     
     // Agregar capa base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -269,23 +269,31 @@ function cargarMapaCalor(data) {
     // Preparar puntos para el mapa de calor
     const heatPoints = [];
     let puntosValidos = 0;
+    let puntosInvalidos = 0;
     
-    data.forEach(row => {
-      const coords = validarCoordenadas(row[27]);
+    data.forEach((row, index) => {
+      const coordsStr = row[COLUMNAS.COORDENADAS];
+      const coords = validarCoordenadas(coordsStr);
       
       if (coords) {
         // Calcular intensidad basada en fallecidos
-        const fallecidos = parseInt(row[23] || 0);
+        const fallecidos = parseInt(row[COLUMNAS.TOTAL_FALLECIDOS] || 0);
         const intensidad = 1 + (fallecidos * 0.5);
         
         heatPoints.push([coords.lat, coords.lng, intensidad]);
         puntosValidos++;
+      } else {
+        puntosInvalidos++;
+        if (puntosInvalidos <= 3) {
+          console.log(`⚠️ Coordenada inválida en fila ${index + 2}:`, coordsStr);
+        }
       }
     });
     
-    console.log(`📍 Puntos válidos para el mapa: ${puntosValidos}`);
+    console.log(`📍 Puntos válidos: ${puntosValidos}`);
+    console.log(`❌ Puntos inválidos: ${puntosInvalidos}`);
     
-    // Crear y agregar capa de calor si hay puntos
+    // Crear capa de calor si hay puntos
     if (heatPoints.length > 0) {
       heatLayer = L.heatLayer(heatPoints, {
         radius: 25,
@@ -303,20 +311,44 @@ function cargarMapaCalor(data) {
       }).addTo(mapaCalor);
       
       console.log(`✅ Mapa de calor cargado con ${heatPoints.length} puntos`);
+      
+      // Agregar contador de puntos en el mapa
+      const infoControl = L.control({ position: 'bottomright' });
+      infoControl.onAdd = function() {
+        const div = L.DomUtil.create('div', 'info-control');
+        div.style.cssText = `
+          background: rgba(255,255,255,0.95);
+          padding: 10px 15px;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          font-size: 13px;
+          font-weight: 600;
+          color: #333;
+        `;
+        div.innerHTML = `
+          <i class="fas fa-map-marker-alt" style="color: #1976d2;"></i> 
+          ${puntosValidos} incidentes
+        `;
+        return div;
+      };
+      infoControl.addTo(mapaCalor);
+      
     } else {
-      console.warn('⚠️ No se encontraron puntos válidos para el mapa de calor');
+      console.warn('⚠️ No hay puntos válidos para mostrar');
       
       mapContainer.innerHTML = `
         <div style="text-align: center; color: #ff9800; padding: 40px;">
           <i class="fas fa-info-circle" style="font-size: 3em; margin-bottom: 15px;"></i>
-          <p style="font-weight: 600; margin: 0; font-size: 18px;">No hay datos para mostrar</p>
-          <p style="font-size: 14px; color: #666; margin-top: 10px;">Aún no se han registrado incidentes</p>
+          <p style="font-weight: 600; margin: 0; font-size: 18px;">No hay datos de ubicación</p>
+          <p style="font-size: 14px; color: #666; margin-top: 10px;">
+            ${data.length > 0 ? 'Los registros no tienen coordenadas válidas' : 'Aún no se han registrado incidentes'}
+          </p>
         </div>
       `;
     }
     
   } catch (error) {
-    console.error('❌ Error al inicializar mapa de calor:', error);
+    console.error('❌ Error al cargar mapa:', error);
     
     const mapContainer = document.getElementById('mapaCalorPreview');
     if (mapContainer) {
@@ -339,7 +371,6 @@ function marcarMenuActivo() {
   
   document.querySelectorAll('nav a').forEach(link => {
     link.classList.remove('active');
-    
     if (link.href.includes(currentPage)) {
       link.classList.add('active');
     }
@@ -378,9 +409,7 @@ function inicializarEfectosTarjetas() {
         ripple.style.opacity = '0';
       }, 10);
       
-      setTimeout(() => {
-        ripple.remove();
-      }, 500);
+      setTimeout(() => ripple.remove(), 500);
     });
   });
 }
@@ -404,31 +433,51 @@ function inicializarSmoothScroll() {
 }
 
 // ============================================================
+// MANEJO DE ERRORES GLOBAL
+// ============================================================
+window.addEventListener('error', function(e) {
+  console.error('❌ Error global capturado:', e.message);
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('❌ Promesa rechazada:', e.reason);
+});
+
+// ============================================================
 // INICIALIZACIÓN
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 Inicializando página principal...');
+  console.log('📡 URL de API:', MAIN_API_URL);
   
-  // Animación inicial del body
+  // Animación inicial
   document.body.style.opacity = '0';
   setTimeout(() => {
     document.body.style.transition = 'opacity 0.4s ease';
     document.body.style.opacity = '1';
   }, 100);
   
-  // Cargar estadísticas y mapa
+  // Cargar estadísticas
   cargarEstadisticasRapidas();
   
   // Marcar menú activo
   marcarMenuActivo();
   
-  // Inicializar efectos después de un pequeño delay
+  // Inicializar efectos
   setTimeout(() => {
     inicializarAnimacionesScroll();
     inicializarEfectosTarjetas();
     inicializarSmoothScroll();
   }, 300);
   
-  console.log('✅ Página principal inicializada correctamente');
+  console.log('✅ Página principal lista');
 });
 
+// ============================================================
+// LIMPIEZA AL SALIR
+// ============================================================
+window.addEventListener('beforeunload', function() {
+  if (mapaCalor) {
+    mapaCalor.remove();
+  }
+});
