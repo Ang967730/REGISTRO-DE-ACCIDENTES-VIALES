@@ -15,9 +15,8 @@
 
   <!-- Encabezado -->
   <header>
-    <img src="fondo-tuxtla.jpg" alt="Fondo de Tuxtla" class="fondo">
+    <img src="img/Tuxtla01.jpg" alt="Fondo de Tuxtla" class="fondo">
     <div class="logo">
-      <img src="logo-smyt.png" alt="Logo Secretaría de Movilidad y Transporte">
     </div>
     <div class="titulo">
       <h1>Registro de Incidentes</h1>
@@ -708,75 +707,87 @@
     </section>
   </main>
 
-  <!-- Modal de Duplicados -->
-  <div id="modalDuplicados" class="modal-overlay">
-    <div class="modal-content">
-      <!-- Encabezado del Modal -->
-      <div class="modal-header">
-        <button class="modal-close" onclick="cerrarModalDuplicados()">&times;</button>
-        <i class="fas fa-exclamation-triangle"></i>
-        <h2>Posible Duplicado Detectado</h2>
-        <p class="subtitle">Se encontró un registro similar en la base de datos</p>
-      </div>
+  <!-- ============================================================
+     MODAL DE DUPLICADOS - SISTEMA PROFESIONAL
+     ============================================================ -->
+<div id="modalDuplicados" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    
+    <!-- Encabezado del Modal -->
+    <div class="modal-header">
+      <button class="modal-close" onclick="cerrarModalDuplicados()">&times;</button>
+      <i class="fas fa-exclamation-triangle modal-icon"></i>
+      <h2>⚠️ Posible Duplicado Detectado</h2>
+      <p class="subtitle">Se encontró un registro similar en la base de datos</p>
+    </div>
 
-      <!-- Puntuación de Similitud -->
-      <div class="similarity-score">
-        <div class="score-container">
-          <div class="score-circle">
-            <svg class="score-progress" viewBox="0 0 100 100">
-              <circle class="score-bg" cx="50" cy="50" r="45"></circle>
-              <circle class="score-fill" cx="50" cy="50" r="45"></circle>
-            </svg>
-            <div class="score-text" id="scoreText">0%</div>
-          </div>
-          <div class="score-details">
-            <h3>Nivel de Similitud</h3>
-            <p>Comparación automática basada en múltiples criterios</p>
-            <div class="score-breakdown" id="scoreBreakdown">
-              <!-- Se llenará dinámicamente -->
-            </div>
-          </div>
+    <!-- Puntuación de Similitud -->
+    <div class="score-details">
+      <div class="score-container">
+        <div class="score-circle">
+          <svg class="score-progress" viewBox="0 0 100 100">
+            <circle class="score-bg" cx="50" cy="50" r="45"></circle>
+            <circle class="score-fill" cx="50" cy="50" r="45"></circle>
+          </svg>
+          <div class="score-text" id="scoreText">0%</div>
+        </div>
+        <div class="score-info">
+          <h3>Nivel de Similitud</h3>
+          <p>Comparación automática basada en múltiples criterios</p>
         </div>
       </div>
+    </div>
 
-      <!-- Comparación de Registros -->
+    <!-- Comparación de Registros -->
+    <div class="comparison-section">
+      <h3 class="comparison-title">
+        <i class="fas fa-columns"></i> Comparación de Registros
+      </h3>
+      
       <div class="comparison-container">
         <!-- Registro Nuevo -->
-        <div class="news-comparison nueva">
+        <div class="comparison-column nueva">
           <div class="comparison-header">
             <i class="fas fa-plus-circle"></i>
             Registro Nuevo
           </div>
           <div class="comparison-body" id="nuevoRegistro">
-            <!-- Se llenará dinámicamente -->
+            <!-- Se llenará dinámicamente con JavaScript -->
           </div>
         </div>
 
         <!-- Registro Existente -->
-        <div class="news-comparison existente">
+        <div class="comparison-column existente">
           <div class="comparison-header">
             <i class="fas fa-database"></i>
             Registro Existente
           </div>
           <div class="comparison-body" id="registroExistente">
-            <!-- Se llenará dinámicamente -->
+            <!-- Se llenará dinámicamente con JavaScript -->
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Botones de Acción -->
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-cancel" onclick="cancelarEnvio()">
-          <i class="fas fa-times"></i>
-          Cancelar Envío
-        </button>
-        <button class="modal-btn modal-btn-continue" onclick="forzarEnvio()">
-          <i class="fas fa-check"></i>
-          Enviar de Todas Formas
-        </button>
-      </div>
+    <!-- Botones de Acción -->
+    <div class="modal-buttons">
+      <button class="modal-btn modal-btn-cancel" onclick="cancelarEnvio()">
+        <i class="fas fa-times"></i>
+        Cancelar Envío
+      </button>
+      <button class="modal-btn modal-btn-continue" onclick="forzarEnvio()">
+        <i class="fas fa-check"></i>
+        Enviar de Todas Formas
+      </button>
+    </div>
+
+    <!-- Nota de Advertencia -->
+    <div class="modal-warning">
+      <i class="fas fa-info-circle"></i>
+      <p>Si estás seguro de que este es un incidente <strong>diferente</strong>, puedes continuar con el envío.</p>
     </div>
   </div>
+</div>
 
   <!-- Pie de página -->
   <footer>
