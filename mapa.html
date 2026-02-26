@@ -10,6 +10,68 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    /* beta-badge-inline */
+    header .titulo p.beta-badge {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(135deg, rgba(25,118,210,0.72), rgba(13,71,161,0.72));
+      color: #ffffff !important;
+      font-size: 0.82em !important;
+      font-weight: 800;
+      letter-spacing: 1.3px;
+      line-height: 1;
+      text-transform: uppercase;
+      text-shadow: none !important;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
+      animation: pulse 2.2s ease-in-out infinite;
+      -webkit-text-fill-color: #ffffff !important;
+      background-clip: padding-box !important;
+      -webkit-background-clip: padding-box !important;
+      backdrop-filter: blur(2px);
+    }
+
+    header .titulo p.beta-badge::before {
+      content: 'Beta';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.72em;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: none;
+      color: #0d47a1;
+      background: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+      header .titulo p.beta-badge {
+        font-size: 0.76em !important;
+        letter-spacing: 1px;
+        padding: 5px 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header .titulo p.beta-badge {
+        font-size: 0.72em !important;
+        gap: 6px;
+        padding: 5px 10px;
+      }
+
+      header .titulo p.beta-badge::before {
+        font-size: 0.68em;
+        padding: 2px 6px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -22,7 +84,7 @@
       <h1>Mapa de Incidentes</h1>
       <p>Estado de Chiapas · Secretaría de Movilidad y Transporte</p>
       <p class="estrategia-nacional">Estrategia Nacional de Movilidad y Seguridad Vial</p>
-            <p>FASE BETA</p>
+            <p class="beta-badge">FASE BETA</p>
     </div>
   </header>
 
@@ -157,7 +219,7 @@
             </button>
           </div>
           <div class="layer-content" id="layerContent">
-            <div class="layer-options">
+                        <div class="layer-options">
               <div class="layer-option active" data-layer="osm" onclick="changeMapLayer('osm', this)">
                 <i class="fas fa-map layer-icon"></i>
                 <div class="layer-title">Comunitario</div>
@@ -180,6 +242,12 @@
                 <i class="fas fa-road layer-icon"></i>
                 <div class="layer-title">Tráfico</div>
                 <div class="layer-description">Movilidad actual</div>
+              </div>
+
+              <div class="layer-option" data-layer="google_satellite" onclick="changeMapLayer('google_satellite', this)">
+                <i class="fas fa-satellite layer-icon"></i>
+                <div class="layer-title">Google Satelite</div>
+                <div class="layer-description">Imagen satelital</div>
               </div>
             </div>
           </div>
