@@ -198,7 +198,7 @@ class MapaIncidentes {
   // INICIALIZACIÓN
   // ============================================================
   
-  initializeMap() {
+      initializeMap() {
     try {
       this.map = L.map('mapaIncidentes').setView([16.75, -93.12], 11);
       
@@ -220,6 +220,11 @@ class MapaIncidentes {
           zoomOffset: -1,
           attribution: '© Mapbox',
           maxZoom: 19
+        }),
+        google_satellite: L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+          attribution: '© Google',
+          maxZoom: 20
         })
       };
 
@@ -1104,11 +1109,12 @@ class MapaIncidentes {
     if (this.capasBase[layerKey]) {
       this.capasBase[layerKey].addTo(this.map);
       
-      const layerNames = {
+                        const layerNames = {
         osm: 'Comunitario',
         hot: 'Infraestructura',
         topo: 'Topográfico',
-        traffic: 'Tráfico'
+        traffic: 'Tráfico',
+        google_satellite: 'Google Satelite'
       };
       
       this.mostrarNotificacion(`Capa: ${layerNames[layerKey]}`, 'info', 2000);
@@ -1646,3 +1652,11 @@ document.addEventListener("DOMContentLoaded", function () {
 console.log('✅ mapa.js cargado completamente');
 console.log('🎯 Columna de coordenadas: 43 (CORRECTO)');
 console.log('📊 Sistema listo para mostrar el 100% de las noticias');
+
+
+
+
+
+
+
+
