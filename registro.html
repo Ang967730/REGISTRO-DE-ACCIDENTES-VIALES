@@ -817,6 +817,13 @@
         <!-- Ubicación -->
         <fieldset class="fieldset-grupo">
           <legend><i class="fas fa-map-marker-alt"></i> Ubicación del Incidente</legend>
+
+          <label><i class="fas fa-location-crosshairs"></i> Modo de captura de ubicación
+            <select id="modoUbicacion">
+              <option value="mapa">Seleccionar punto en el mapa</option>
+              <option value="coordenadas">Pegar coordenadas</option>
+            </select>
+          </label>
           
           <label><i class="fas fa-map-marker-alt"></i> Dirección
             <input type="text" name="Direccion" id="direccion" readonly>
@@ -825,6 +832,17 @@
           <label><i class="fas fa-globe"></i> Coordenadas Geográficas
             <input type="text" name="Coordenadas_Geograficas" id="coordenadas" readonly>
           </label>
+
+          <div id="pegadoCoordenadasDiv" class="coordenadas-manuales" style="display: none;">
+            <label><i class="fas fa-keyboard"></i> Pegar coordenadas (lat, lng)
+              <div class="coordenadas-manuales-grid">
+                <input type="text" id="coordenadasManualInput" placeholder="Ej: 16.752330, -93.116983">
+                <button type="button" id="aplicarCoordenadasBtn" class="btn-aplicar-coordenadas">
+                  <i class="fas fa-location-arrow"></i> Aplicar coordenadas
+                </button>
+              </div>
+            </label>
+          </div>
 
           <label style="grid-column: 1 / -1;"><i class="fas fa-map"></i> Mapa de localización
             <div id="mapa" style="height: 350px; border: 2px solid #e0e0e0; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1);"></div>
@@ -993,8 +1011,4 @@
 </body>
 
 </html>
-
-
-
-
 
