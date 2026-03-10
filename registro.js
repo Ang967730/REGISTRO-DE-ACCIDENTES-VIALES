@@ -85,6 +85,87 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
      CONFIGURACIÓN DEL MAPA
      ============================================================ */
+  function obtenerModoUbicacion() {
+    return document.getElementById('modoUbicacion')?.value || 'mapa';
+  }
+
+  function parsearCoordenadasManual(texto) {
+    const raw = (texto || '').trim();
+    if (!raw) return null;
+
+    const validar = (lat, lng) => {
+      if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+      return { lat, lng };
+    };
+
+    const limpio = raw.replace(/\s+/g, '');
+    let match = limpio.match(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+    if (match) {
+      const parsed = validar(parseFloat(match[1]), parseFloat(match[2]));
+      if (parsed) return parsed;
+    }
+
+    // Google Maps URL: .../@lat,lng,zoom...
+    match = raw.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,|$)/);
+    if (match) {
+      const parsed = validar(parseFloat(match[1]), parseFloat(match[2]));
+      if (parsed) return parsed;
+    }
+
+    // Google Maps URL: ...!3dlat!4dlng...
+    match = raw.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+    if (match) {
+      const parsed = validar(parseFloat(match[1]), parseFloat(match[2]));
+      if (parsed) return parsed;
+    }
+
+    return null;
+  }
+
+  function actualizarUIUbicacion() {
+    const modo = obtenerModoUbicacion();
+    const pegadoDiv = document.getElementById('pegadoCoordenadasDiv');
+    if (pegadoDiv) {
+      pegadoDiv.style.display = modo === 'coordenadas' ? 'block' : 'none';
+    }
+  }
+
+  async function establecerUbicacion(lat, lng, centrarMapa = true) {
+    const latFmt = Number(lat).toFixed(6);
+    const lngFmt = Number(lng).toFixed(6);
+
+    const campoCoordenadas = document.getElementById('coordenadas');
+    if (campoCoordenadas) campoCoordenadas.value = `${latFmt}, ${lngFmt}`;
+
+    if (map && typeof L !== 'undefined') {
+      const latLng = L.latLng(Number(latFmt), Number(lngFmt));
+      if (marker) {
+        marker.setLatLng(latLng);
+      } else {
+        marker = L.marker(latLng).addTo(map);
+      }
+      if (centrarMapa) {
+        map.setView(latLng, 16);
+      }
+    }
+
+    try {
+      mostrarProgreso('Obteniendo dirección...', 'Por favor espera');
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latFmt}&lon=${lngFmt}&format=json`);
+      const data = await res.json();
+      const addressInput = document.getElementById('direccion');
+      if (addressInput) {
+        addressInput.value = data.display_name || '';
+      }
+      ocultarProgreso();
+    } catch (err) {
+      console.warn('No se pudo obtener la dirección:', err);
+      ocultarProgreso();
+      mostrarNotificacion('No se pudo obtener la dirección', 'warning');
+    }
+  }
+
   const mapaContainer = document.getElementById('mapa');
   if (mapaContainer && typeof L !== 'undefined') {
     map = L.map('mapa').setView([16.75, -93.12], 13);
@@ -93,36 +174,36 @@ document.addEventListener("DOMContentLoaded", function () {
     }).addTo(map);
 
     map.on('click', async function(e) {
-      const lat = e.latlng.lat.toFixed(6);
-      const lng = e.latlng.lng.toFixed(6);
-
-      const campoCoordenadas = document.getElementById('coordenadas');
-      if (campoCoordenadas) campoCoordenadas.value = `${lat}, ${lng}`;
-
-      if (marker) {
-        marker.setLatLng(e.latlng);
-      } else {
-        marker = L.marker(e.latlng).addTo(map);
+      if (obtenerModoUbicacion() === 'coordenadas') {
+        mostrarNotificacion('Cambia a "Seleccionar punto en el mapa" para usar clic en mapa.', 'info', 3000);
+        return;
       }
-
-      try {
-        mostrarProgreso('Obteniendo dirección...', 'Por favor espera');
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-        const data = await res.json();
-        const addressInput = document.getElementById('direccion');
-        if (addressInput) {
-          addressInput.value = data.display_name || '';
-        }
-        ocultarProgreso();
-      } catch (err) {
-        console.warn("No se pudo obtener la dirección:", err);
-        ocultarProgreso();
-        mostrarNotificacion('No se pudo obtener la dirección', 'warning');
-      }
+      await establecerUbicacion(e.latlng.lat, e.latlng.lng, false);
     });
   } else {
     console.warn('Mapa no inicializado: Leaflet no disponible o contenedor ausente.');
   }
+
+  const modoUbicacion = document.getElementById('modoUbicacion');
+  if (modoUbicacion) {
+    modoUbicacion.addEventListener('change', actualizarUIUbicacion);
+  }
+
+  const aplicarCoordenadasBtn = document.getElementById('aplicarCoordenadasBtn');
+  if (aplicarCoordenadasBtn) {
+    aplicarCoordenadasBtn.addEventListener('click', async function() {
+      const input = document.getElementById('coordenadasManualInput');
+      const coords = parsearCoordenadasManual(input?.value || '');
+      if (!coords) {
+        mostrarNotificacion('Formato inválido. Usa: lat, lng (ej. 16.752330, -93.116983)', 'error');
+        return;
+      }
+      await establecerUbicacion(coords.lat, coords.lng, true);
+      mostrarNotificacion('Ubicación aplicada correctamente', 'success', 2500);
+    });
+  }
+
+  actualizarUIUbicacion();
 
   /* ============================================================
      CLOUDINARY
@@ -1529,6 +1610,12 @@ document.addEventListener("DOMContentLoaded", function () {
     
     const linkDiv = document.getElementById("linkNoticia");
     if (linkDiv) linkDiv.style.display = "none";
+
+    const modoUbicacion = document.getElementById('modoUbicacion');
+    if (modoUbicacion) modoUbicacion.value = 'mapa';
+    const coordenadasManualInput = document.getElementById('coordenadasManualInput');
+    if (coordenadasManualInput) coordenadasManualInput.value = '';
+    actualizarUIUbicacion();
     
     const transporteDiv = document.getElementById("transportePublicoDiv");
     if (transporteDiv) transporteDiv.style.display = "none";
