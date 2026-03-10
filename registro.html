@@ -326,7 +326,19 @@
      SECCIÓN CONDICIONAL: TRANSPORTE PÚBLICO - VERSIÓN SIMPLIFICADA
      ============================================================ -->
 <div id="transportePublicoDiv" style="grid-column: 1 / -1; display: none;">
-  
+  <fieldset class="fieldset-grupo transport-data-toggle">
+    <legend><i class="fas fa-circle-info"></i> Datos de la Unidad</legend>
+    <label><i class="fas fa-clipboard-question"></i> ¿Cuenta con datos de la unidad de transporte público?
+      <select id="tieneDatosUnidad" name="Tiene_datos_de_la_unidad" onchange="mostrarSeccionDatosTransporte()">
+        <option value="">-- Selecciona --</option>
+        <option value="Sí">Sí</option>
+        <option value="No">No</option>
+      </select>
+    </label>
+  </fieldset>
+
+  <div id="datosUnidadTransporteDiv" style="display: none;">
+
   <!-- Selector de Tipo de Transporte Público -->
   <fieldset class="fieldset-grupo transport-type-selector">
     <legend><i class="fas fa-bus"></i> Información de Transporte Público</legend>
@@ -369,7 +381,7 @@
        ============================================================ -->
   <div id="camposColectivo" class="transport-fields" style="display: none;">
     <fieldset class="fieldset-grupo">
-      <legend><i class="fas fa-bus"></i> Información del Colectivo</legend>
+      <legend><i class="fas fa-bus"></i> Información del Colectivo (Unidad 1)</legend>
       
       <label><i class="fas fa-hashtag"></i> Número Económico de la Unidad *
         <input type="text" id="colectivoNumero" name="Colectivo_Numero_Economico" placeholder="Ej: 1234, A-456">
@@ -440,6 +452,83 @@
     </fieldset>
   </div>
 
+  <div id="camposColectivo2" class="transport-fields" style="display: none;">
+    <fieldset class="fieldset-grupo">
+      <legend><i class="fas fa-bus"></i> Información del Colectivo (Unidad 2)</legend>
+
+      <label><i class="fas fa-hashtag"></i> Número Económico de la Unidad 2
+        <input type="text" id="colectivoNumero2" name="Colectivo2_Numero_Economico" placeholder="Ej: 5678, B-123">
+      </label>
+
+      <label><i class="fas fa-route"></i> Número de Ruta 2
+        <input type="text" id="colectivoRuta2" name="Colectivo2_Numero_Ruta" placeholder="Ej: Ruta 12">
+      </label>
+
+      <label><i class="fas fa-hand-paper"></i> Maniobra que Realizaba 2
+        <select id="colectivoManiobra2" name="Colectivo2_Maniobra">
+          <option value="">-- Selecciona --</option>
+          <option value="Circulando normalmente">Circulando normalmente</option>
+          <option value="Detenido (pasajeros)">Detenido subiendo/bajando pasajeros</option>
+          <option value="Arrancando">Arrancando desde parada</option>
+          <option value="Frenando bruscamente">Frenando bruscamente</option>
+          <option value="Rebasando">Rebasando a otro vehículo</option>
+          <option value="Dando vuelta">Dando vuelta</option>
+          <option value="Otra maniobra">Otra maniobra</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor 2
+        <select id="colectivoConductor2" name="Colectivo2_Comportamiento_Conductor">
+          <option value="">-- Selecciona --</option>
+          <option value="Conducción normal">Conducción normal</option>
+          <option value="Exceso de velocidad">Exceso de velocidad</option>
+          <option value="Competencia (pique)">Competencia con otra unidad </option>
+          <option value="Uso de celular">Uso de celular mientras conducía</option>
+          <option value="Conducción agresiva">Conducción agresiva</option>
+          <option value="Influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+          <option value="Saltó alto/semáforo">Se saltó alto/semáforo</option>
+          <option value="No respetó señalización">No respetó señalización</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-tools"></i> Estado Aparente de la Unidad 2
+        <select id="colectivoEstado2" name="Colectivo2_Estado">
+          <option value="">-- Selecciona --</option>
+          <option value="Bueno">Buen estado (bien mantenido)</option>
+          <option value="Regular">Regular (desgaste visible)</option>
+          <option value="Malo">Mal estado (muy deteriorado)</option>
+          <option value="No observé">No me fijé</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-users"></i> Número de Pasajeros a Bordo 2
+        <select id="colectivoPasajeros2" name="Colectivo2_Pasajeros">
+          <option value="">-- Selecciona --</option>
+          <option value="Vacío">Vacío</option>
+          <option value="Pocos">Pocos pasajeros</option>
+          <option value="Lleno">Lleno </option>
+          <option value="Sobrecupo">Con sobrecupo</option>
+          <option value="No observé">No observé</option>
+        </select>
+      </label>
+
+      <label><i class="fas fa-exclamation-triangle"></i> Gravedad del Accidente 2
+        <select id="colectivoGravedad2" name="Colectivo2_Gravedad">
+          <option value="">-- Selecciona --</option>
+          <option value="Solo daños materiales">Solo daños materiales</option>
+          <option value="Heridos leves">Heridos leves</option>
+          <option value="Heridos graves">Heridos graves</option>
+          <option value="Fallecidos">Con fallecidos</option>
+          <option value="No lo sé">No lo sé</option>
+        </select>
+      </label>
+      <div style="grid-column: 1 / -1; text-align: right;">
+        <button type="button" class="btn-quitar-unidad" data-remove-unidad="2-fixed">
+          <i class="fas fa-trash-alt"></i> Quitar esta unidad
+        </button>
+      </div>
+    </fieldset>
+  </div>
 
   <!-- ============================================================
        CAMPOS PARA TAXIS
@@ -646,6 +735,27 @@
     </fieldset>
   </div>
 
+  <div id="controlesUnidadesColectivo" class="transport-fields transporte-extra-panel" style="display: none;">
+    <label class="transporte-extra-label">
+      <i class="fas fa-list"></i> Tipo de unidad a agregar
+      <select id="tipoUnidadExtra">
+        <option value="colectivo">Colectivo</option>
+        <option value="taxi">Taxi</option>
+        <option value="mototaxi">Mototaxi</option>
+      </select>
+    </label>
+    <div class="transporte-extra-actions">
+      <button type="button" id="agregarUnidadColectivoBtn" class="btn-agregar-unidad">
+        <i class="fas fa-plus-circle"></i> Agregar una unidad más
+      </button>
+    </div>
+    <small class="transporte-extra-help">
+      Se guardará en las mismas celdas separado por coma (,).
+    </small>
+  </div>
+
+  <div id="colectivoUnidadesExtraContainer" class="transport-fields" style="display: none;"></div>
+  </div>
 </div>
 <!-- FIN SECCIÓN TRANSPORTE PÚBLICO -->
 
@@ -883,6 +993,8 @@
 </body>
 
 </html>
+
+
 
 
 
