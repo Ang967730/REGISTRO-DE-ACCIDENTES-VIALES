@@ -9,8 +9,9 @@ document.addEventListener("DOMContentLoaded", function () {
      ============================================================ */
   let fotografiasCloudinary = [];
   let cloudinaryWidget = null;
-  let datosFormularioTemp = null;  // ← CRÍTICO: Guarda datos para envío forzado
+  let datosFormularioTemp = null;  // CRITICO: Guarda datos para envio forzado
   let marker = null;
+  let map = null;
   
   const REGISTRO_API_URL = "https://script.google.com/macros/s/AKfycbyh_f5b6vcLB3_mSQPke9pLtXYrTYJF4mwJnc88CBNDyjrmSNtSfrmOMv5YRoDb7eBS/exec";
 
@@ -84,39 +85,44 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
      CONFIGURACIÓN DEL MAPA
      ============================================================ */
-  const map = L.map('mapa').setView([16.75, -93.12], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+  const mapaContainer = document.getElementById('mapa');
+  if (mapaContainer && typeof L !== 'undefined') {
+    map = L.map('mapa').setView([16.75, -93.12], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-  map.on('click', async function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lng = e.latlng.lng.toFixed(6);
+    map.on('click', async function(e) {
+      const lat = e.latlng.lat.toFixed(6);
+      const lng = e.latlng.lng.toFixed(6);
 
-    const campoCoordenadas = document.getElementById('coordenadas');
-    if (campoCoordenadas) campoCoordenadas.value = `${lat}, ${lng}`;
+      const campoCoordenadas = document.getElementById('coordenadas');
+      if (campoCoordenadas) campoCoordenadas.value = `${lat}, ${lng}`;
 
-    if (marker) {
-      marker.setLatLng(e.latlng);
-    } else {
-      marker = L.marker(e.latlng).addTo(map);
-    }
-
-    try {
-      mostrarProgreso('Obteniendo dirección...', 'Por favor espera');
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-      const data = await res.json();
-      const addressInput = document.getElementById('direccion');
-      if (addressInput) {
-        addressInput.value = data.display_name || '';
+      if (marker) {
+        marker.setLatLng(e.latlng);
+      } else {
+        marker = L.marker(e.latlng).addTo(map);
       }
-      ocultarProgreso();
-    } catch (err) {
-      console.warn("No se pudo obtener la dirección:", err);
-      ocultarProgreso();
-      mostrarNotificacion('No se pudo obtener la dirección', 'warning');
-    }
-  });
+
+      try {
+        mostrarProgreso('Obteniendo dirección...', 'Por favor espera');
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        const addressInput = document.getElementById('direccion');
+        if (addressInput) {
+          addressInput.value = data.display_name || '';
+        }
+        ocultarProgreso();
+      } catch (err) {
+        console.warn("No se pudo obtener la dirección:", err);
+        ocultarProgreso();
+        mostrarNotificacion('No se pudo obtener la dirección', 'warning');
+      }
+    });
+  } else {
+    console.warn('Mapa no inicializado: Leaflet no disponible o contenedor ausente.');
+  }
 
   /* ============================================================
      CLOUDINARY
@@ -219,7 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `${foto.secure_url.replace('/upload/', '/upload/w_200,h_150,c_fill,q_auto,f_auto/')}` : 
         foto.preview;
       
-      const tamaño = foto.bytes ? 
+      const tamanoMB = foto.bytes ? 
         (foto.bytes / 1024 / 1024).toFixed(2) : 
         (foto.size / 1024 / 1024).toFixed(2);
       
@@ -227,8 +233,8 @@ document.addEventListener("DOMContentLoaded", function () {
         <img src="${previewUrl}" alt="${foto.name}" loading="lazy">
         <div class="file-preview-info">
           <div class="file-preview-name">${foto.name}</div>
-          <div class="file-preview-size">${tamaño} MB</div>
-          <div class="cloudinary-badge">☁️ Cloudinary</div>
+          <div class="file-preview-size">${tamanoMB} MB</div>
+          <div class="cloudinary-badge">Cloudinary</div>
         </div>
         <button type="button" class="file-remove" onclick="eliminarFoto(${index})">
           <i class="fas fa-times"></i>
@@ -329,30 +335,433 @@ document.addEventListener("DOMContentLoaded", function () {
     select.addEventListener('change', verificarTransportePublico);
   });
 
+  function normalizarTexto(valor) {
+    return (valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  function esChoferTransportePublico(valor) {
+    const normalizado = normalizarTexto(valor);
+    const compacto = normalizado.replace(/[^a-z]/g, '');
+    return compacto.includes('chofer') &&
+      compacto.includes('transporte') &&
+      (compacto.includes('publico') || compacto.includes('pblico'));
+  }
+
+  function esRespuestaSi(valor) {
+    return normalizarTexto(valor) === 'si';
+  }
+
+  let totalUnidadesTransporteExtra = 0;
+  let siguienteIndiceUnidadTransporte = 3;
+
+  function limpiarCamposSegundoColectivo() {
+    document.querySelectorAll('#camposColectivo2 input, #camposColectivo2 select').forEach(el => {
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        el.checked = false;
+      } else {
+        el.value = '';
+      }
+    });
+  }
+
+  function crearBloqueUnidadColectivo(indiceUnidad) {
+    return `
+      <div class="unidad-colectivo-extra" data-unidad-index="${indiceUnidad}">
+        <fieldset class="fieldset-grupo">
+          <legend><i class="fas fa-bus"></i> Informacion del Colectivo (Unidad ${indiceUnidad})</legend>
+
+          <label><i class="fas fa-hashtag"></i> Numero Economico de la Unidad ${indiceUnidad}
+            <input type="text" data-colectivo-field="numero" placeholder="Ej: ${indiceUnidad}234, C-${indiceUnidad}56">
+          </label>
+
+          <label><i class="fas fa-route"></i> Numero de Ruta ${indiceUnidad}
+            <input type="text" data-colectivo-field="ruta" placeholder="Ej: Ruta ${indiceUnidad}">
+          </label>
+
+          <label><i class="fas fa-hand-paper"></i> Maniobra que Realizaba ${indiceUnidad}
+            <select data-colectivo-field="maniobra">
+              <option value="">-- Selecciona --</option>
+              <option value="Circulando normalmente">Circulando normalmente</option>
+              <option value="Detenido (pasajeros)">Detenido subiendo/bajando pasajeros</option>
+              <option value="Arrancando">Arrancando desde parada</option>
+              <option value="Frenando bruscamente">Frenando bruscamente</option>
+              <option value="Rebasando">Rebasando a otro vehiculo</option>
+              <option value="Dando vuelta">Dando vuelta</option>
+              <option value="Otra maniobra">Otra maniobra</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor ${indiceUnidad}
+            <select data-colectivo-field="conductor">
+              <option value="">-- Selecciona --</option>
+              <option value="Conduccion normal">Conduccion normal</option>
+              <option value="Exceso de velocidad">Exceso de velocidad</option>
+              <option value="Competencia (pique)">Competencia con otra unidad </option>
+              <option value="Uso de celular">Uso de celular mientras conducia</option>
+              <option value="Conduccion agresiva">Conduccion agresiva</option>
+              <option value="Influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+              <option value="Salto alto/semaforo">Se salto alto/semaforo</option>
+              <option value="No respeto senalizacion">No respeto senalizacion</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-tools"></i> Estado Aparente de la Unidad ${indiceUnidad}
+            <select data-colectivo-field="estado">
+              <option value="">-- Selecciona --</option>
+              <option value="Bueno">Buen estado (bien mantenido)</option>
+              <option value="Regular">Regular (desgaste visible)</option>
+              <option value="Malo">Mal estado (muy deteriorado)</option>
+              <option value="No observe">No me fije</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-users"></i> Numero de Pasajeros a Bordo ${indiceUnidad}
+            <select data-colectivo-field="pasajeros">
+              <option value="">-- Selecciona --</option>
+              <option value="Vacio">Vacio</option>
+              <option value="Pocos">Pocos pasajeros</option>
+              <option value="Lleno">Lleno </option>
+              <option value="Sobrecupo">Con sobrecupo</option>
+              <option value="No observe">No observe</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-exclamation-triangle"></i> Gravedad del Accidente ${indiceUnidad}
+            <select data-colectivo-field="gravedad">
+              <option value="">-- Selecciona --</option>
+              <option value="Solo danos materiales">Solo danos materiales</option>
+              <option value="Heridos leves">Heridos leves</option>
+              <option value="Heridos graves">Heridos graves</option>
+              <option value="Fallecidos">Con fallecidos</option>
+              <option value="No lo se">No lo se</option>
+            </select>
+          </label>
+
+          <div style="grid-column: 1 / -1; text-align: right;">
+            <button type="button" class="btn-quitar-unidad" data-remove-unidad="${indiceUnidad}">
+              <i class="fas fa-trash-alt"></i> Quitar esta unidad
+            </button>
+          </div>
+        </fieldset>
+      </div>
+    `;
+  }
+
+  function crearBloqueUnidadTaxi(indiceUnidad) {
+    return `
+      <div class="unidad-transporte-extra" data-unidad-index="${indiceUnidad}" data-extra-type="taxi">
+        <fieldset class="fieldset-grupo">
+          <legend><i class="fas fa-taxi"></i> Información del Taxi (Unidad ${indiceUnidad})</legend>
+
+          <label><i class="fas fa-hashtag"></i> Número Económico de la Unidad ${indiceUnidad}
+            <input type="text" data-extra-field="taxi_numero" placeholder="Ej: 12${indiceUnidad}, TX-${indiceUnidad}23">
+          </label>
+
+          <label><i class="fas fa-taxi"></i> Tipo de Taxi
+            <select data-extra-field="taxi_tipo" data-extra-role="taxi-tipo">
+              <option value="">-- Selecciona --</option>
+              <option value="Taxi libre">Taxi libre</option>
+              <option value="Taxi de base">Taxi de base</option>
+              <option value="Taxi de app">Taxi de aplicación (Uber/Didi/InDrive)</option>
+              <option value="No lo sé">No lo sé</option>
+            </select>
+          </label>
+
+          <div data-extra-wrapper="taxi-sitio-base" style="display: none; grid-column: 1 / -1;">
+            <label><i class="fas fa-map-marker-alt"></i> Sitio / Base del Taxi
+              <select data-extra-field="taxi_sitio_base" data-extra-role="taxi-sitio">
+                <option value="">-- Selecciona --</option>
+                <option value="Sitio Centro">Sitio Centro</option>
+                <option value="Sitio Marimba">Sitio Marimba</option>
+                <option value="Sitio Plaza Crystal">Sitio Plaza Crystal</option>
+                <option value="Sitio Terán">Sitio Terán</option>
+                <option value="Sitio Plaza las Américas">Sitio Plaza las Américas</option>
+                <option value="Otro sitio">Otro sitio</option>
+                <option value="No aplica / No lo sé">No aplica / No lo sé</option>
+              </select>
+            </label>
+            <div data-extra-wrapper="taxi-otro-sitio" style="display: none; margin-top: 10px;">
+              <label><i class="fas fa-edit"></i> Especifica el Sitio
+                <input type="text" data-extra-field="taxi_otro_sitio" placeholder="Escribe el sitio o base">
+              </label>
+            </div>
+          </div>
+
+          <label><i class="fas fa-palette"></i> Color del Taxi
+            <select data-extra-field="taxi_color" data-extra-role="taxi-color">
+              <option value="">-- Selecciona --</option>
+              <option value="Blanco">Blanco</option>
+              <option value="Amarillo">Amarillo</option>
+              <option value="Blanco con amarillo">Blanco con amarillo</option>
+              <option value="Verde (Ecotaxi)">Verde (Ecotaxi)</option>
+              <option value="Otro color">Otro color</option>
+            </select>
+          </label>
+
+          <div data-extra-wrapper="taxi-otro-color" style="display: none;">
+            <label><i class="fas fa-palette"></i> Especifica el Color
+              <input type="text" data-extra-field="taxi_otro_color" placeholder="Ej: Rojo, Azul, Gris">
+            </label>
+          </div>
+
+          <label><i class="fas fa-users"></i> ¿Llevaba Pasajeros?
+            <select data-extra-field="taxi_pasajeros" data-extra-role="taxi-pasajeros">
+              <option value="">-- Selecciona --</option>
+              <option value="Sí">Sí, llevaba pasajero(s)</option>
+              <option value="No">No, iba vacío</option>
+              <option value="No observé">No observé / No sé</option>
+            </select>
+          </label>
+
+          <div data-extra-wrapper="taxi-numero-pasajeros" style="display: none;">
+            <label><i class="fas fa-user-friends"></i> Número Aproximado de Pasajeros
+              <select data-extra-field="taxi_numero_pasajeros">
+                <option value="">-- Selecciona --</option>
+                <option value="1 pasajero">1 pasajero</option>
+                <option value="2 pasajeros">2 pasajeros</option>
+                <option value="3 pasajeros">3 pasajeros</option>
+                <option value="4 o más (sobrecupo)">4 o más (sobrecupo)</option>
+                <option value="No lo vi">No lo vi</option>
+              </select>
+            </label>
+          </div>
+
+          <label><i class="fas fa-hand-paper"></i> Maniobra
+            <select data-extra-field="taxi_maniobra">
+              <option value="">-- Selecciona --</option>
+              <option value="Circulando">Circulando normalmente</option>
+              <option value="Parada pasajero">Subiendo/bajando pasajero</option>
+              <option value="Buscando pasaje">Buscando pasaje</option>
+              <option value="Arrancando">Arrancando</option>
+              <option value="Estacionándose">Estacionándose</option>
+              <option value="Vuelta en U">Dando vuelta en U</option>
+              <option value="Rebasando">Rebasando</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor
+            <select data-extra-field="taxi_conductor">
+              <option value="">-- Selecciona --</option>
+              <option value="Conducción normal">Conducción normal</option>
+              <option value="Exceso de velocidad">Exceso de velocidad</option>
+              <option value="Usando celular">Usando celular</option>
+              <option value="Frenó bruscamente">Frenó/arrancó bruscamente</option>
+              <option value="Se atravesó">Se atravesó sin precaución</option>
+              <option value="No respeto la señalización">No respeto la señalización</option>
+              <option value="Bajo influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+              <option value="Se pasó alto">Se pasó alto/semáforo</option>
+              <option value="Conducción agresiva">Conducción agresiva</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-tools"></i> Estado Aparente del Taxi
+            <select data-extra-field="taxi_estado">
+              <option value="">-- Selecciona --</option>
+              <option value="Bueno">Buen estado (limpio, bien mantenido)</option>
+              <option value="Regular">Regular (con desgaste visible)</option>
+              <option value="Malo">Mal estado (deteriorado)</option>
+              <option value="No observé">No me fijé / No observé</option>
+            </select>
+          </label>
+
+          <div style="grid-column: 1 / -1; text-align: right;">
+            <button type="button" class="btn-quitar-unidad" data-remove-unidad="${indiceUnidad}">
+              <i class="fas fa-trash-alt"></i> Quitar esta unidad
+            </button>
+          </div>
+        </fieldset>
+      </div>
+    `;
+  }
+
+  function crearBloqueUnidadMototaxi(indiceUnidad) {
+    return `
+      <div class="unidad-transporte-extra" data-unidad-index="${indiceUnidad}" data-extra-type="mototaxi">
+        <fieldset class="fieldset-grupo">
+          <legend><i class="fas fa-motorcycle"></i> Información del Mototaxi (Unidad ${indiceUnidad})</legend>
+          <label><i class="fas fa-hashtag"></i> Número Económico
+            <input type="text" data-extra-field="mototaxi_numero" placeholder="Ej: MT-${indiceUnidad}12">
+          </label>
+          <label><i class="fas fa-users"></i> ¿Llevaba Pasajeros?
+            <select data-extra-field="mototaxi_pasajeros" data-extra-role="mototaxi-pasajeros">
+              <option value="">-- Selecciona --</option>
+              <option value="Sí">Sí, llevaba pasajero(s)</option>
+              <option value="No">No, iba vacío</option>
+              <option value="No observé">No observé / No sé</option>
+            </select>
+          </label>
+
+          <div data-extra-wrapper="mototaxi-numero-pasajeros" style="display: none;">
+            <label><i class="fas fa-user-friends"></i> Número Aproximado de Pasajeros
+              <select data-extra-field="mototaxi_numero_pasajeros">
+                <option value="">-- Selecciona --</option>
+                <option value="1 pasajero">1 pasajero</option>
+                <option value="2 pasajeros">2 pasajeros</option>
+                <option value="3 o más (sobrecupo)">3 o más (sobrecupo)</option>
+                <option value="No lo vi">No lo vi</option>
+              </select>
+            </label>
+          </div>
+
+          <label><i class="fas fa-hand-paper"></i> Maniobra
+            <select data-extra-field="mototaxi_maniobra">
+              <option value="">-- Selecciona --</option>
+              <option value="Circulando">Circulando normalmente</option>
+              <option value="Parada pasajero">Subiendo/bajando pasajero</option>
+              <option value="Buscando pasaje">Buscando pasaje</option>
+              <option value="Arrancando">Arrancando</option>
+              <option value="Entre tráfico">Circulando entre el tráfico</option>
+              <option value="Rebasando por derecha">Rebasando por la derecha</option>
+              <option value="Vuelta cerrada">Dando vuelta cerrada</option>
+              <option value="Por banqueta">Circulando por banqueta</option>
+              <option value="Sentido contrario">Circulando en sentido contrario</option>
+              <option value="Zigzagueando">Zigzagueando entre vehículos</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-user-slash"></i> Comportamiento del Conductor
+            <select data-extra-field="mototaxi_conductor">
+              <option value="">-- Selecciona --</option>
+              <option value="Conducción normal">Conducción normal</option>
+              <option value="Exceso velocidad">Exceso de velocidad</option>
+              <option value="Usando celular">Usando celular</option>
+              <option value="Rebasó por derecha">Rebasó por la derecha</option>
+              <option value="Se atravesó">Se atravesó sin precaución</option>
+              <option value="Pasó semáforo">No respetó semáforo/alto</option>
+              <option value="Por banqueta">Circuló por banqueta</option>
+              <option value="Sentido contrario">Circuló en sentido contrario</option>
+              <option value="Zigzagueo">Zigzagueo peligroso</option>
+              <option value="Frenando">Frenó de repente</option>
+              <option value="Bajo influencia aparente">Bajo influencia aparente del alcohol/drogas</option>
+              <option value="Conducción agresiva">Conducción agresiva</option>
+            </select>
+          </label>
+
+          <label><i class="fas fa-tools"></i> Estado Aparente del Mototaxi
+            <select data-extra-field="mototaxi_estado">
+              <option value="">-- Selecciona --</option>
+              <option value="Bueno">Buen estado (bien mantenido)</option>
+              <option value="Regular">Regular (con desgaste visible)</option>
+              <option value="Malo">Mal estado (deteriorado)</option>
+              <option value="Muy malo">Muy mal estado (peligroso)</option>
+              <option value="No observé">No me fijé / No observé</option>
+            </select>
+          </label>
+          <div style="grid-column: 1 / -1; text-align: right;">
+            <button type="button" class="btn-quitar-unidad" data-remove-unidad="${indiceUnidad}">
+              <i class="fas fa-trash-alt"></i> Quitar esta unidad
+            </button>
+          </div>
+        </fieldset>
+      </div>
+    `;
+  }
+
+  function limpiarUnidadesColectivoExtras() {
+    const container = document.getElementById('colectivoUnidadesExtraContainer');
+    if (container) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+    }
+    totalUnidadesTransporteExtra = 0;
+    siguienteIndiceUnidadTransporte = 3;
+  }
+
+  function agregarUnidadColectivoExtra() {
+    const container = document.getElementById('colectivoUnidadesExtraContainer');
+    const bloqueUnidad2 = document.getElementById('camposColectivo2');
+    const tipoExtra = document.getElementById('tipoUnidadExtra')?.value || 'colectivo';
+    if (!container || !bloqueUnidad2) return;
+
+    if (tipoExtra === 'colectivo' && totalUnidadesTransporteExtra === 0) {
+      bloqueUnidad2.style.display = 'block';
+      totalUnidadesTransporteExtra = 1;
+      return;
+    }
+
+    const indice = siguienteIndiceUnidadTransporte++;
+    if (tipoExtra === 'colectivo') {
+      container.insertAdjacentHTML('beforeend', crearBloqueUnidadColectivo(indice));
+    } else if (tipoExtra === 'taxi') {
+      container.insertAdjacentHTML('beforeend', crearBloqueUnidadTaxi(indice));
+    } else {
+      container.insertAdjacentHTML('beforeend', crearBloqueUnidadMototaxi(indice));
+    }
+    container.style.display = 'block';
+    totalUnidadesTransporteExtra++;
+  }
+
+  function actualizarControlesUnidadesColectivo() {
+    const tipoSeleccionado = document.querySelector('input[name="tipoTransportePublico"]:checked')?.value || '';
+    const datosUnidadDiv = document.getElementById('datosUnidadTransporteDiv');
+    const controles = document.getElementById('controlesUnidadesColectivo');
+    const mostrar = !!tipoSeleccionado && datosUnidadDiv && datosUnidadDiv.style.display !== 'none';
+
+    if (controles) controles.style.display = mostrar ? 'block' : 'none';
+
+    if (!mostrar) {
+      limpiarCamposSegundoColectivo();
+      const bloqueUnidad2 = document.getElementById('camposColectivo2');
+      if (bloqueUnidad2) bloqueUnidad2.style.display = 'none';
+      limpiarUnidadesColectivoExtras();
+    }
+  }
+
+  function actualizarVisibilidadSegundoColectivo() {
+    actualizarControlesUnidadesColectivo();
+  }
+
   function verificarTransportePublico() {
     const usuario1 = document.getElementById('usuario1')?.value || '';
     const usuario2 = document.getElementById('usuario2')?.value || '';
-    
-    const esTransportePublico = 
-      usuario1 === "Chofer de transporte público" || 
-      usuario2 === "Chofer de transporte público";
+
+    const esTransportePublico =
+      esChoferTransportePublico(usuario1) ||
+      esChoferTransportePublico(usuario2);
     
     const transporteDiv = document.getElementById('transportePublicoDiv');
+    const tieneDatosUnidad = document.getElementById('tieneDatosUnidad');
     
     if (transporteDiv) {
       if (esTransportePublico) {
         transporteDiv.style.display = 'block';
+        mostrarSeccionDatosTransporte();
+        actualizarVisibilidadSegundoColectivo();
       } else {
         transporteDiv.style.display = 'none';
+        if (tieneDatosUnidad) tieneDatosUnidad.value = '';
         limpiarCamposTransporte();
       }
     }
   }
 
+  window.mostrarSeccionDatosTransporte = function() {
+    const tieneDatosUnidad = document.getElementById('tieneDatosUnidad')?.value || '';
+    const datosUnidadDiv = document.getElementById('datosUnidadTransporteDiv');
+
+    if (!datosUnidadDiv) return;
+
+    if (esRespuestaSi(tieneDatosUnidad)) {
+      datosUnidadDiv.style.display = 'block';
+      actualizarVisibilidadSegundoColectivo();
+    } else {
+      datosUnidadDiv.style.display = 'none';
+      limpiarCamposTransporte();
+    }
+  };
+
   window.mostrarCamposTransporte = function() {
     const tipoSeleccionado = document.querySelector('input[name="tipoTransportePublico"]:checked')?.value;
     
     document.getElementById('camposColectivo').style.display = 'none';
+    document.getElementById('camposColectivo2').style.display = 'none';
+    const controlesUnidades = document.getElementById('controlesUnidadesColectivo');
+    if (controlesUnidades) controlesUnidades.style.display = 'none';
+    limpiarUnidadesColectivoExtras();
     document.getElementById('camposTaxi').style.display = 'none';
     document.getElementById('camposMototaxi').style.display = 'none';
     
@@ -363,7 +772,117 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (tipoSeleccionado === 'mototaxi') {
       document.getElementById('camposMototaxi').style.display = 'block';
     }
+    actualizarVisibilidadSegundoColectivo();
   };
+
+  const agregarUnidadColectivoBtn = document.getElementById('agregarUnidadColectivoBtn');
+  if (agregarUnidadColectivoBtn) {
+    agregarUnidadColectivoBtn.addEventListener('click', agregarUnidadColectivoExtra);
+  }
+
+  function limpiarCamposEnContenedor(contenedor, selectores) {
+    selectores.forEach(selector => {
+      contenedor.querySelectorAll(selector).forEach(el => {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = false;
+        } else {
+          el.value = '';
+        }
+      });
+    });
+  }
+
+  function actualizarCondicionesTaxiExtra(bloque) {
+    if (!bloque) return;
+
+    const tipoTaxi = bloque.querySelector('[data-extra-role="taxi-tipo"]')?.value || '';
+    const wrapperSitio = bloque.querySelector('[data-extra-wrapper="taxi-sitio-base"]');
+    const mostrarSitio = normalizarTexto(tipoTaxi) === 'taxi de base';
+    if (wrapperSitio) {
+      wrapperSitio.style.display = mostrarSitio ? 'block' : 'none';
+      if (!mostrarSitio) {
+        limpiarCamposEnContenedor(wrapperSitio, ['[data-extra-field="taxi_sitio_base"]', '[data-extra-field="taxi_otro_sitio"]']);
+      }
+    }
+
+    const sitioTaxi = bloque.querySelector('[data-extra-role="taxi-sitio"]')?.value || '';
+    const wrapperOtroSitio = bloque.querySelector('[data-extra-wrapper="taxi-otro-sitio"]');
+    const mostrarOtroSitio = normalizarTexto(sitioTaxi) === 'otro sitio';
+    if (wrapperOtroSitio) {
+      wrapperOtroSitio.style.display = mostrarOtroSitio ? 'block' : 'none';
+      if (!mostrarOtroSitio) limpiarCamposEnContenedor(wrapperOtroSitio, ['[data-extra-field="taxi_otro_sitio"]']);
+    }
+
+    const colorTaxi = bloque.querySelector('[data-extra-role="taxi-color"]')?.value || '';
+    const wrapperOtroColor = bloque.querySelector('[data-extra-wrapper="taxi-otro-color"]');
+    const mostrarOtroColor = normalizarTexto(colorTaxi) === 'otro color';
+    if (wrapperOtroColor) {
+      wrapperOtroColor.style.display = mostrarOtroColor ? 'block' : 'none';
+      if (!mostrarOtroColor) limpiarCamposEnContenedor(wrapperOtroColor, ['[data-extra-field="taxi_otro_color"]']);
+    }
+
+    const pasajerosTaxi = bloque.querySelector('[data-extra-role="taxi-pasajeros"]')?.value || '';
+    const wrapperNumeroPasajeros = bloque.querySelector('[data-extra-wrapper="taxi-numero-pasajeros"]');
+    const mostrarNumeroPasajeros = esRespuestaSi(pasajerosTaxi);
+    if (wrapperNumeroPasajeros) {
+      wrapperNumeroPasajeros.style.display = mostrarNumeroPasajeros ? 'block' : 'none';
+      if (!mostrarNumeroPasajeros) limpiarCamposEnContenedor(wrapperNumeroPasajeros, ['[data-extra-field="taxi_numero_pasajeros"]']);
+    }
+  }
+
+  function actualizarCondicionesMototaxiExtra(bloque) {
+    if (!bloque) return;
+    const pasajeros = bloque.querySelector('[data-extra-role="mototaxi-pasajeros"]')?.value || '';
+    const wrapperNumero = bloque.querySelector('[data-extra-wrapper="mototaxi-numero-pasajeros"]');
+    const mostrarNumero = esRespuestaSi(pasajeros);
+    if (wrapperNumero) {
+      wrapperNumero.style.display = mostrarNumero ? 'block' : 'none';
+      if (!mostrarNumero) limpiarCamposEnContenedor(wrapperNumero, ['[data-extra-field="mototaxi_numero_pasajeros"]']);
+    }
+  }
+
+  document.addEventListener('change', function(e) {
+    const bloqueTaxi = e.target.closest('.unidad-transporte-extra[data-extra-type="taxi"]');
+    if (bloqueTaxi) {
+      actualizarCondicionesTaxiExtra(bloqueTaxi);
+    }
+
+    const bloqueMototaxi = e.target.closest('.unidad-transporte-extra[data-extra-type="mototaxi"]');
+    if (bloqueMototaxi) {
+      actualizarCondicionesMototaxiExtra(bloqueMototaxi);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    const btnQuitar = e.target.closest('[data-remove-unidad]');
+    if (!btnQuitar) return;
+
+    const unidadIndex = btnQuitar.getAttribute('data-remove-unidad');
+    if (unidadIndex === '2-fixed') {
+      limpiarCamposSegundoColectivo();
+      const bloqueUnidad2 = document.getElementById('camposColectivo2');
+      if (bloqueUnidad2) bloqueUnidad2.style.display = 'none';
+      totalUnidadesTransporteExtra = Math.max(0, totalUnidadesTransporteExtra - 1);
+      return;
+    }
+
+    const bloque = document.querySelector(`.unidad-colectivo-extra[data-unidad-index="${unidadIndex}"]`);
+    if (bloque) {
+      bloque.remove();
+      totalUnidadesTransporteExtra = Math.max(0, totalUnidadesTransporteExtra - 1);
+    }
+
+    const bloqueTransporte = document.querySelector(`.unidad-transporte-extra[data-unidad-index="${unidadIndex}"]`);
+    if (bloqueTransporte) {
+      bloqueTransporte.remove();
+      totalUnidadesTransporteExtra = Math.max(0, totalUnidadesTransporteExtra - 1);
+    }
+
+    const container = document.getElementById('colectivoUnidadesExtraContainer');
+    if (container && container.children.length === 0) {
+      container.style.display = 'none';
+    }
+  });
 
   window.mostrarCampoSitioTaxi = function() {
     const tipoTaxi = document.getElementById('taxiTipo')?.value;
@@ -411,7 +930,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const grupoNumeroPasajeros = document.getElementById('grupoNumeroPasajeros');
     const selectNumeroPasajeros = document.getElementById('taxiNumeroPasajeros');
     
-    if (pasajerosSelect && pasajerosSelect.value === 'Sí') {
+    if (pasajerosSelect && esRespuestaSi(pasajerosSelect.value)) {
       grupoNumeroPasajeros.style.display = 'block';
     } else {
       grupoNumeroPasajeros.style.display = 'none';
@@ -424,7 +943,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const grupoNumeroPasajeros = document.getElementById('grupoNumeroPasajerosMototaxi');
     const selectNumeroPasajeros = document.getElementById('mototaxiNumeroPasajeros');
     
-    if (pasajerosSelect && pasajerosSelect.value === 'Sí') {
+    if (pasajerosSelect && esRespuestaSi(pasajerosSelect.value)) {
       grupoNumeroPasajeros.style.display = 'block';
     } else {
       grupoNumeroPasajeros.style.display = 'none';
@@ -446,8 +965,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     
     document.getElementById('camposColectivo').style.display = 'none';
+    document.getElementById('camposColectivo2').style.display = 'none';
+    const controlesUnidades = document.getElementById('controlesUnidadesColectivo');
+    if (controlesUnidades) controlesUnidades.style.display = 'none';
+    limpiarUnidadesColectivoExtras();
     document.getElementById('camposTaxi').style.display = 'none';
     document.getElementById('camposMototaxi').style.display = 'none';
+    document.getElementById('datosUnidadTransporteDiv').style.display = 'none';
     document.getElementById('grupoSitioTaxi').style.display = 'none';
     document.getElementById('campoOtroSitio').style.display = 'none';
     document.getElementById('campoOtroColor').style.display = 'none';
@@ -470,12 +994,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     const esForzado = datos.get('forzar_insercion') === 'true';
-    mostrarProgreso(esForzado ? '🔒 Enviando registro forzado...' : '📤 Enviando registro...', 'Procesando datos');
+    mostrarProgreso(esForzado ? 'Enviando registro forzado...' : 'Enviando registro...', 'Procesando datos');
     
     try {
-      console.log("📤 Enviando a:", REGISTRO_API_URL);
-      console.log("📸 Fotos:", fotografiasCloudinary.length);
-      console.log("🔒 Forzado:", esForzado);
+      console.log("Enviando a:", REGISTRO_API_URL);
+      console.log("Fotos:", fotografiasCloudinary.length);
+      console.log("Forzado:", esForzado);
       
       // Agregar URLs de Cloudinary
       fotografiasCloudinary.forEach((foto, index) => {
@@ -496,10 +1020,10 @@ document.addEventListener("DOMContentLoaded", function () {
         body: datos
       });
       
-      console.log("📡 Status:", response.status);
+      console.log("Status:", response.status);
       
       const responseText = await response.text();
-      console.log("📄 Respuesta:", responseText.substring(0, 200));
+      console.log("Respuesta:", responseText.substring(0, 200));
       
       let responseData;
       try {
@@ -511,9 +1035,9 @@ document.addEventListener("DOMContentLoaded", function () {
       
       ocultarProgreso();
       
-      // ⚠️ DETECCIÓN DE DUPLICADO
+      // DETECCION DE DUPLICADO
       if (responseData.status === 'duplicado' && !esForzado) {
-        console.log("⚠️ DUPLICADO DETECTADO:", responseData.similitud + '%');
+        console.log("DUPLICADO DETECTADO:", responseData.similitud + '%');
         
         // GUARDAR DATOS GLOBALMENTE
         datosFormularioTemp = datos;
@@ -529,25 +1053,25 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
       
-      // ✅ ÉXITO
+      // EXITO
       if (responseData.status === 'exito' || response.ok) {
-        console.log("✅ Envío exitoso");
+        console.log("Envio exitoso");
         
         if (mensaje) {
           mensaje.innerHTML = `
             <div class="mensaje-exito">
               <i class="fas fa-check-circle"></i>
               <div>
-                <strong>✅ Registro enviado correctamente</strong>
-                <p>📸 Fotografías: ${fotografiasCloudinary.length}/2</p>
-                ${esForzado ? '<p><small>⚠️ Marcado como duplicado forzado</small></p>' : ''}
+                <strong>Registro enviado correctamente</strong>
+                <p>Fotografias: ${fotografiasCloudinary.length}/2</p>
+                ${esForzado ? '<p><small>Marcado como duplicado forzado</small></p>' : ''}
               </div>
             </div>
           `;
         }
         
         mostrarNotificacion(
-          esForzado ? '✅ Registro forzado enviado' : '✅ Registro enviado correctamente', 
+          esForzado ? 'Registro forzado enviado' : 'Registro enviado correctamente', 
           'success', 
           5000
         );
@@ -561,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error("Error:", error);
       ocultarProgreso();
       
       if (mensaje) {
@@ -569,13 +1093,13 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="mensaje-error">
             <i class="fas fa-exclamation-circle"></i>
             <div>
-              <strong>❌ Error al enviar</strong>
+              <strong>Error al enviar</strong>
               <p>${error.message}</p>
             </div>
           </div>
         `;
       }
-      mostrarNotificacion('❌ Error: ' + error.message, 'error');
+      mostrarNotificacion('Error: ' + error.message, 'error');
     } finally {
       if (submitBtn) {
         submitBtn.innerHTML = originalText;
@@ -589,11 +1113,11 @@ document.addEventListener("DOMContentLoaded", function () {
      ============================================================ */
 
   function mostrarModalDuplicados(respuesta) {
-    console.log("⚠️ Mostrando modal de duplicados");
+    console.log("Mostrando modal de duplicados");
     
     const modal = document.getElementById('modalDuplicados');
     if (!modal) {
-      console.error("❌ Modal no encontrado en el HTML");
+      console.error("Modal no encontrado en el HTML");
       return;
     }
     
@@ -675,17 +1199,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const configuraciones = {
       'critico': {
         gradiente: 'linear-gradient(135deg, #dc3545, #c82333)',
-        titulo: '🚨 Duplicado Crítico Detectado',
+        titulo: 'Duplicado Critico Detectado',
         subtitulo: 'Este registro es muy similar a uno existente'
       },
       'alto': {
         gradiente: 'linear-gradient(135deg, #ff6b6b, #ff8c42)',
-        titulo: '⚠️ Posible Duplicado',
+        titulo: 'Posible Duplicado',
         subtitulo: 'Se encontró un registro con alta similitud'
       },
       'medio': {
         gradiente: 'linear-gradient(135deg, #feca57, #ff9ff3)',
-        titulo: '⚡ Registro Similar Encontrado',
+        titulo: 'Registro Similar Encontrado',
         subtitulo: 'Verifica que no sea el mismo incidente'
       }
     };
@@ -793,7 +1317,7 @@ document.addEventListener("DOMContentLoaded", function () {
      ============================================================ */
 
   window.cerrarModalDuplicados = function() {
-    console.log("🚪 Cerrando modal");
+    console.log("Cerrando modal");
     const modal = document.getElementById('modalDuplicados');
     if (modal) {
       modal.style.opacity = '0';
@@ -810,17 +1334,17 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   window.cancelarEnvio = function() {
-    console.log("❌ Envío cancelado por el usuario");
+    console.log("Envio cancelado por el usuario");
     datosFormularioTemp = null;
     cerrarModalDuplicados();
-    mostrarNotificacion('✅ Envío cancelado. No se creó ningún duplicado.', 'success', 3000);
+    mostrarNotificacion('Envio cancelado. No se creo ningun duplicado.', 'success', 3000);
   };
 
   window.forzarEnvio = function() {
-    console.log("🔄 FORZANDO ENVÍO");
+    console.log("FORZANDO ENVIO");
     
     if (!datosFormularioTemp) {
-      console.error("❌ No hay datos guardados");
+      console.error("No hay datos guardados");
       alert("ERROR: No hay datos para enviar.\n\nPor favor, intenta registrar el incidente nuevamente.");
       cerrarModalDuplicados();
       return;
@@ -831,14 +1355,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Confirmación adicional si es crítico
     if (similitud >= 90) {
       const confirmar = confirm(
-        '⚠️ ADVERTENCIA FINAL\n\n' +
+        'ADVERTENCIA FINAL\n\n' +
         'La similitud es del ' + similitud + '%\n\n' +
         'Estás a punto de registrar un posible duplicado.\n\n' +
         '¿Estás COMPLETAMENTE SEGURO de que este es un incidente DIFERENTE?'
       );
       
       if (!confirmar) {
-        console.log("❌ Usuario canceló el envío forzado");
+        console.log("Usuario cancelo el envio forzado");
         return;
       }
     }
@@ -849,7 +1373,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Agregar flag de forzado
     datosFormularioTemp.set('forzar_insercion', 'true');
     
-    console.log("✅ Flag agregado, enviando...");
+    console.log("Flag agregado, enviando...");
     
     // Enviar
     enviarFormularioCompleto(datosFormularioTemp);
@@ -879,12 +1403,91 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ============================================================
      MANEJO DEL FORMULARIO
      ============================================================ */
+  function unirValoresNoVacios(...valores) {
+    return valores
+      .map(v => (v || '').toString().trim())
+      .filter(v => v !== '')
+      .join(', ');
+  }
+
+  function concatenarCamposColectivoEnMismaCelda(datos) {
+    const tipoPrincipal = document.querySelector('input[name="tipoTransportePublico"]:checked')?.value || '';
+    const tipos = new Set();
+    if (tipoPrincipal) tipos.add(tipoPrincipal);
+
+    const extraValues = (selector) =>
+      Array.from(document.querySelectorAll(selector))
+        .map(el => (el.value || '').toString().trim())
+        .filter(v => v !== '');
+
+    if (document.getElementById('camposColectivo2')?.style.display !== 'none') {
+      tipos.add('colectivo');
+    }
+    document.querySelectorAll('#colectivoUnidadesExtraContainer [data-extra-type]').forEach(el => {
+      tipos.add(el.getAttribute('data-extra-type'));
+    });
+
+    const colectivoMap = [
+      ['Colectivo_Numero_Economico', 'colectivoNumero', 'colectivoNumero2', 'numero'],
+      ['Colectivo_Numero_Ruta', 'colectivoRuta', 'colectivoRuta2', 'ruta'],
+      ['Colectivo_Maniobra', 'colectivoManiobra', 'colectivoManiobra2', 'maniobra'],
+      ['Colectivo_Comportamiento_Conductor', 'colectivoConductor', 'colectivoConductor2', 'conductor'],
+      ['Colectivo_Estado', 'colectivoEstado', 'colectivoEstado2', 'estado'],
+      ['Colectivo_Pasajeros', 'colectivoPasajeros', 'colectivoPasajeros2', 'pasajeros'],
+      ['Colectivo_Gravedad', 'colectivoGravedad', 'colectivoGravedad2', 'gravedad']
+    ];
+    colectivoMap.forEach(([destino, id1, id2, campoExtra]) => {
+      const valores = [];
+      if (tipoPrincipal === 'colectivo') valores.push(document.getElementById(id1)?.value || '');
+      if (document.getElementById('camposColectivo2')?.style.display !== 'none') valores.push(document.getElementById(id2)?.value || '');
+      valores.push(...extraValues(`#colectivoUnidadesExtraContainer [data-extra-type="colectivo"] [data-colectivo-field="${campoExtra}"]`));
+      datos.set(destino, unirValoresNoVacios(...valores));
+    });
+
+    const taxiMap = [
+      ['Taxi_Numero_Economico', 'taxiNumero', 'taxi_numero'],
+      ['Taxi_Tipo', 'taxiTipo', 'taxi_tipo'],
+      ['Taxi_Sitio_Base', 'taxiSitio', 'taxi_sitio_base'],
+      ['Taxi_Otro_Sitio', 'taxiOtroSitio', 'taxi_otro_sitio'],
+      ['Taxi_Color', 'taxiColor', 'taxi_color'],
+      ['Taxi_Otro_Color', 'taxiOtroColor', 'taxi_otro_color'],
+      ['Taxi_Llevaba_Pasajeros', 'taxiPasajeros', 'taxi_pasajeros'],
+      ['Taxi_Numero_Pasajeros', 'taxiNumeroPasajeros', 'taxi_numero_pasajeros'],
+      ['Taxi_Maniobra', 'taxiManiobra', 'taxi_maniobra'],
+      ['Taxi_Comportamiento_Conductor', 'taxiConductor', 'taxi_conductor'],
+      ['Taxi_Estado', 'taxiEstado', 'taxi_estado']
+    ];
+    taxiMap.forEach(([destino, idBase, campoExtra]) => {
+      const valores = [];
+      if (tipoPrincipal === 'taxi') valores.push(document.getElementById(idBase)?.value || '');
+      valores.push(...extraValues(`#colectivoUnidadesExtraContainer [data-extra-type="taxi"] [data-extra-field="${campoExtra}"]`));
+      datos.set(destino, unirValoresNoVacios(...valores));
+    });
+
+    const mototaxiMap = [
+      ['Mototaxi_Numero_Economico', 'mototaxiNumero', 'mototaxi_numero'],
+      ['Mototaxi_Llevaba_Pasajeros', 'mototaxiPasajeros', 'mototaxi_pasajeros'],
+      ['Mototaxi_Numero_Pasajeros', 'mototaxiNumeroPasajeros', 'mototaxi_numero_pasajeros'],
+      ['Mototaxi_Maniobra', 'mototaxiManiobra', 'mototaxi_maniobra'],
+      ['Mototaxi_Comportamiento_Conductor', 'mototaxiConductor', 'mototaxi_conductor'],
+      ['Mototaxi_Estado', 'mototaxiEstado', 'mototaxi_estado']
+    ];
+    mototaxiMap.forEach(([destino, idBase, campoExtra]) => {
+      const valores = [];
+      if (tipoPrincipal === 'mototaxi') valores.push(document.getElementById(idBase)?.value || '');
+      valores.push(...extraValues(`#colectivoUnidadesExtraContainer [data-extra-type="mototaxi"] [data-extra-field="${campoExtra}"]`));
+      datos.set(destino, unirValoresNoVacios(...valores));
+    });
+
+    datos.set('Tipo_Transporte_Publico', unirValoresNoVacios(...Array.from(tipos)));
+  }
+
   const form = document.getElementById("formIncidente");
   if (form) {
     form.addEventListener("submit", async function(e) {
       e.preventDefault();
       
-      console.log("📝 Iniciando envío");
+      console.log("Iniciando envio");
       
       const camposRequeridos = ['Municipio', 'Correo_Electronico', 'Fecha_del_siniestro'];
       let validacion = true;
@@ -901,10 +1504,7 @@ document.addEventListener("DOMContentLoaded", function () {
       
       const datos = new FormData(form);
       
-      const tipoTransporte = document.querySelector('input[name="tipoTransportePublico"]:checked');
-      if (tipoTransporte) {
-        datos.append('Tipo_Transporte_Publico', tipoTransporte.value);
-      }
+      concatenarCamposColectivoEnMismaCelda(datos);
       
       enviarFormularioCompleto(datos);
     });
@@ -919,7 +1519,7 @@ document.addEventListener("DOMContentLoaded", function () {
     mostrarVistaPrevia();
     actualizarContadorFotos();
     
-    if (marker) {
+    if (map && marker) {
       map.removeLayer(marker);
       marker = null;
     }
@@ -938,14 +1538,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const mensaje = document.getElementById("respuesta");
     if (mensaje) mensaje.innerHTML = '';
     
-    console.log("✅ Formulario limpiado");
+    console.log("Formulario limpiado");
   }
 
   /* ============================================================
      INICIALIZACIÓN
      ============================================================ */
   
-  console.log("🚀 Sistema inicializando...");
+  console.log("Sistema inicializando...");
   
   if (typeof cloudinary !== 'undefined') {
     inicializarCloudinary();
@@ -954,5 +1554,8 @@ document.addEventListener("DOMContentLoaded", function () {
   actualizarContadorFotos();
   verificarTransportePublico();
   
-  console.log("✅ Sistema listo con detección de duplicados");
+  console.log("Sistema listo con deteccion de duplicados");
 });
+
+
+
