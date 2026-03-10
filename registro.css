@@ -1104,6 +1104,13 @@ button[onclick="buscarConductor()"] {
   border: 2px solid #90caf9;
 }
 
+.transport-data-toggle {
+  background: #f7fbff;
+  border: 2px solid #d6e8ff;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
 .transport-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1160,6 +1167,59 @@ button[onclick="buscarConductor()"] {
 
 .transport-option input[type="radio"]:checked + .option-card .option-text {
   color: #1976d2;
+}
+
+.btn-agregar-unidad,
+.btn-quitar-unidad {
+  border: 1px solid #1976d2;
+  background: #fff;
+  color: #1976d2;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-agregar-unidad:hover,
+.btn-quitar-unidad:hover {
+  background: #e3f2fd;
+}
+
+.transporte-extra-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #cfe3fb;
+  background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+}
+
+.transporte-extra-label {
+  max-width: 360px;
+  margin-bottom: 10px;
+}
+
+.transporte-extra-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transporte-extra-help {
+  display: block;
+  margin-top: 8px;
+  color: #5f6b7a;
+  font-size: 0.92rem;
+}
+
+#colectivoUnidadesExtraContainer {
+  margin-top: 12px;
+}
+
+.unidad-colectivo-extra .fieldset-grupo,
+.unidad-transporte-extra .fieldset-grupo {
+  margin-top: 12px;
+  border: 1px solid #dbe9f8;
+  background: #fcfeff;
 }
 
 /* Secciones de campos de transporte */
