@@ -248,6 +248,37 @@ button[onclick="buscarConductor()"] {
   box-shadow: var(--sombra-fuerte);
 }
 
+.coordenadas-manuales {
+  grid-column: 1 / -1;
+}
+
+.coordenadas-manuales-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-aplicar-coordenadas {
+  border: 1px solid var(--color-primario);
+  background: var(--color-primario);
+  color: #fff;
+  border-radius: var(--border-radius);
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-aplicar-coordenadas:hover {
+  background: #1565c0;
+}
+
+@media (max-width: 640px) {
+  .coordenadas-manuales-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Asegurar que Leaflet funcione correctamente */
 .leaflet-container {
   background: #fff;
