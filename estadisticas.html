@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estadísticas Avanzadas - Siniestros Viales Chiapas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="estadisticas.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,25 +16,24 @@
     header .titulo p.beta-badge {
       display: inline-flex !important;
       align-items: center;
-      gap: 8px;
-      margin-top: 14px;
-      padding: 6px 14px;
+      gap: 7px;
+      margin-top: 12px;
+      padding: 5px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: linear-gradient(135deg, rgba(25,118,210,0.72), rgba(13,71,161,0.72));
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: linear-gradient(135deg, rgba(7,38,70,0.78), rgba(17,84,137,0.78));
       color: #ffffff !important;
-      font-size: 0.82em !important;
-      font-weight: 800;
-      letter-spacing: 1.3px;
+      font-size: 0.78em !important;
+      font-weight: 700;
+      letter-spacing: 0.9px;
       line-height: 1;
       text-transform: uppercase;
       text-shadow: none !important;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
-      animation: pulse 2.2s ease-in-out infinite;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.10);
       -webkit-text-fill-color: #ffffff !important;
       background-clip: padding-box !important;
       -webkit-background-clip: padding-box !important;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(3px);
     }
 
     header .titulo p.beta-badge::before {
@@ -39,39 +41,39 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-size: 0.72em;
+      font-size: 0.68em;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       text-transform: none;
-      color: #0d47a1;
-      background: #ffffff;
+      color: #0d3b66;
+      background: rgba(255, 255, 255, 0.92);
     }
 
     @media (max-width: 768px) {
       header .titulo p.beta-badge {
-        font-size: 0.76em !important;
-        letter-spacing: 1px;
-        padding: 5px 12px;
+        font-size: 0.72em !important;
+        letter-spacing: 0.7px;
+        padding: 5px 10px;
       }
     }
 
     @media (max-width: 480px) {
       header .titulo p.beta-badge {
-        font-size: 0.72em !important;
-        gap: 6px;
-        padding: 5px 10px;
+        font-size: 0.68em !important;
+        gap: 5px;
+        padding: 4px 9px;
       }
 
       header .titulo p.beta-badge::before {
-        font-size: 0.68em;
-        padding: 2px 6px;
+        font-size: 0.64em;
+        padding: 2px 5px;
       }
     }
   </style>
 </head>
-<body>
+<body class="dashboard-enterprise">
 
   <!-- Encabezado -->
   <header>
@@ -79,7 +81,7 @@
     <div class="logo">
     </div>
     <div class="titulo">
-      <h1> Estadísticas Avanzadas</h1>
+      <h1>Estadísticas Avanzadas</h1>
       <p>Estado de Chiapas · Secretaría de Movilidad y Transporte</p>
       <p class="estrategia-nacional">Estrategia Nacional de Movilidad y Seguridad Vial</p>
             <p class="beta-badge">FASE BETA</p>
@@ -96,7 +98,6 @@
 
   <!-- Contenido principal -->
   <main class="contenido-principal">
-    
     <!-- Resumen General -->
     <section class="resumen-general">
       <h2><i class="fas fa-chart-bar"></i> Resumen General</h2>
@@ -214,6 +215,7 @@
             <canvas id="chartMunicipios"></canvas>
           </div>
         </div>
+      </div>
     </section>
 
     <!-- Panel 2: Perfil de Siniestros -->
