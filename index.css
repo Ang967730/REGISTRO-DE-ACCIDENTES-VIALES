@@ -719,6 +719,212 @@
   transition: transform 0.3s ease, filter 0.3s ease;
 }
 
+/* ============================================================
+   REFRESH VISUAL - INICIO
+   ============================================================ */
+body {
+  background: linear-gradient(180deg, #f3f7fc 0%, #edf3fa 52%, #f8fbff 100%);
+}
+
+.contenido-principal {
+  max-width: 1280px;
+}
+
+.hero {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-radius: 24px;
+  padding: 56px 42px;
+  box-shadow: 0 20px 45px rgba(25, 118, 210, 0.28);
+  margin-bottom: 36px;
+}
+
+.hero::before {
+  animation: none;
+  opacity: 0.7;
+}
+
+.hero-content {
+  max-width: 980px;
+}
+
+.hero-content h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+  margin-bottom: 16px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.24);
+}
+
+.hero-content p {
+  font-size: 1.06rem;
+  line-height: 1.62;
+}
+
+.hero-content p:last-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+
+.funcionalidades {
+  margin: 34px 0;
+}
+
+.tarjetas {
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.tarjeta {
+  border-radius: 18px;
+  padding: 28px 24px;
+  border: 1px solid #dbe6f2;
+  box-shadow: 0 12px 28px rgba(17, 44, 74, 0.1);
+}
+
+.tarjeta::before {
+  height: 3px;
+  transform: scaleX(1);
+  opacity: 0.75;
+}
+
+.tarjeta:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 34px rgba(17, 44, 74, 0.16);
+  border-color: #c0d3e7;
+}
+
+.tarjeta-icono {
+  width: 74px;
+  height: 74px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 22px rgba(25, 118, 210, 0.25);
+}
+
+.tarjeta:hover .tarjeta-icono {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.gif-icono {
+  width: 78px;
+  height: 78px;
+}
+
+.tarjeta h3 {
+  color: #12395e;
+  margin-bottom: 12px;
+}
+
+.tarjeta p {
+  color: #56687d;
+  margin-bottom: 14px;
+}
+
+.tarjeta-boton span {
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: #eef5fd;
+  border: 1px solid #d7e5f3;
+  color: #0f4c81;
+  font-size: 0.92rem;
+}
+
+.tarjeta:hover .tarjeta-boton span {
+  color: #0b3f6d;
+  background: #e5f0fb;
+  border-color: #c2d9ef;
+  gap: 12px;
+}
+
+.estadisticas-rapidas,
+.mapa-calor-preview,
+.info-item {
+  border: 1px solid #dbe5f1;
+  box-shadow: 0 12px 28px rgba(17, 44, 74, 0.1);
+}
+
+.estadisticas-rapidas,
+.mapa-calor-preview {
+  border-radius: 18px;
+  margin: 34px 0;
+}
+
+.estadisticas-rapidas {
+  padding: 36px 30px;
+}
+
+.stats-grid {
+  gap: 16px;
+}
+
+.stat-item {
+  border: 1px solid #d8e5f2;
+  border-radius: 14px;
+  padding: 24px 18px;
+  box-shadow: 0 8px 18px rgba(17, 44, 74, 0.08);
+}
+
+.stat-item:hover {
+  transform: translateY(-3px);
+}
+
+.stat-numero {
+  font-size: 2rem;
+  color: #0f4c81;
+}
+
+.stat-label {
+  color: #5b6d82;
+  font-size: 1rem;
+}
+
+.mapa-calor-preview {
+  padding: 30px 24px;
+}
+
+.mapa-header h2 {
+  font-size: 1.5rem;
+  color: #12395e;
+}
+
+.mapa-info {
+  border-radius: 12px;
+  border-left-width: 3px;
+}
+
+.mapa-container {
+  border-radius: 14px;
+  border: 1px solid #ceddeb;
+  box-shadow: 0 10px 24px rgba(17, 44, 74, 0.12);
+}
+
+.info-grid {
+  gap: 18px;
+}
+
+.info-item {
+  border-radius: 14px;
+  padding: 26px 22px;
+}
+
+.info-item h3 {
+  color: #12395e;
+  font-size: 1.18rem;
+}
+
+.info-item p {
+  color: #5b6d82;
+}
+
 /* Efecto al pasar el mouse */
 .tarjeta:hover .gif-icono {
   transform: scale(1.1);
@@ -730,7 +936,7 @@
 /* ============================================================
    BADGE FASE BETA EN HEADER
    ============================================================ */
-.titulo p:last-child {
+.titulo p:last-child:not(.beta-badge) {
   font-size: 1.8em;  /* Tamaño más grande */
   font-weight: 800;
   color: #faf9f7;
@@ -759,14 +965,14 @@
 
 /* Responsive - ajustar en móviles */
 @media (max-width: 768px) {
-  .titulo p:last-child {
+  .titulo p:last-child:not(.beta-badge) {
     font-size: 1.4em;
     letter-spacing: 2px;
   }
 }
 
 @media (max-width: 480px) {
-  .titulo p:last-child {
+  .titulo p:last-child:not(.beta-badge) {
     font-size: 1.2em;
     letter-spacing: 1px;
   }
