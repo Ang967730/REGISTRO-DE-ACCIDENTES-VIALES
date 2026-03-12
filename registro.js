@@ -31,24 +31,53 @@ document.addEventListener("DOMContentLoaded", function () {
      ============================================================ */
   
   function mostrarNotificacion(mensaje, tipo = 'info', duracion = 5000) {
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(n => n.remove());
+    let stack = document.getElementById('notificationStack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'notificationStack';
+      stack.className = 'notification-stack';
+      document.body.appendChild(stack);
+    }
+
+    const existingNotifications = stack.querySelectorAll('.notification');
+    if (existingNotifications.length >= 3) {
+      existingNotifications[0].remove();
+    }
+
+    const iconos = {
+      success: 'fa-check-circle',
+      error: 'fa-exclamation-circle',
+      warning: 'fa-triangle-exclamation',
+      info: 'fa-circle-info'
+    };
 
     const notification = document.createElement('div');
     notification.className = `notification ${tipo}`;
     notification.innerHTML = `
-      <div class="notification-content">
-        <i class="fas ${tipo === 'success' ? 'fa-check-circle' : tipo === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-        <span>${mensaje}</span>
-        <button class="notification-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+      <div class="notification-content" role="status" aria-live="polite">
+        <div class="notification-body">
+          <span class="notification-icon"><i class="fas ${iconos[tipo] || iconos.info}"></i></span>
+          <span class="notification-message">${mensaje}</span>
+        </div>
+        <button class="notification-close" type="button" aria-label="Cerrar notificación">&times;</button>
       </div>
     `;
     
-    document.body.appendChild(notification);
+    stack.appendChild(notification);
+    requestAnimationFrame(() => notification.classList.add('show'));
+
+    const closeButton = notification.querySelector('.notification-close');
+    closeButton.addEventListener('click', () => {
+      notification.classList.remove('show');
+      notification.classList.add('hide');
+      setTimeout(() => notification.remove(), 260);
+    });
     
     setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.remove();
+      if (notification.isConnected) {
+        notification.classList.remove('show');
+        notification.classList.add('hide');
+        setTimeout(() => notification.remove(), 260);
       }
     }, duracion);
   }
