@@ -59,6 +59,20 @@
   position: relative;
 }
 
+.mapa-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mapa-side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: start;
+  width: 100%;
+}
+
 /* ============================================================
    FILTROS AVANZADOS
    ============================================================ */
@@ -156,17 +170,16 @@
    LEYENDA DEL MAPA
    ============================================================ */
 .legend-panel {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  z-index: 1000;
+  position: relative;
+  z-index: 2;
   background: rgba(255,255,255,0.98);
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
   backdrop-filter: blur(10px);
-  min-width: 280px;
+  min-width: auto;
   border: 1px solid rgba(255,255,255,0.3);
+  width: 100%;
 }
 
 .legend-header {
@@ -214,22 +227,39 @@
   opacity: 0;
 }
 
+.legend-content:not(.collapsed) {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.legend-panel.collapsed .legend-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  margin: 5px 0;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 0;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
   background: rgba(248,249,250,0.7);
+  min-width: 140px;
+  flex: 0 0 auto;
 }
 
 .legend-item:hover {
   background: rgba(25,118,210,0.1);
-  transform: translateX(5px);
+  transform: translateY(-2px);
 }
 
 .legend-item.active {
@@ -260,7 +290,7 @@
 }
 
 .legend-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
   flex: 1;
@@ -279,9 +309,9 @@
   background: linear-gradient(135deg, #4caf50, #81c784) !important;
   color: white !important;
   font-weight: 700;
-  margin-top: 10px;
-  border-top: 2px solid #e0e0e0;
-  padding-top: 15px !important;
+  margin-top: 0;
+  border-top: none;
+  padding-top: 10px !important;
 }
 
 .legend-all:hover {
@@ -301,24 +331,23 @@
    SELECTOR DE CAPAS
    ============================================================ */
 .layer-selector {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 1000;
+  position: relative;
+  z-index: 2;
   background: rgba(255,255,255,0.98);
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
   backdrop-filter: blur(10px);
-  min-width: 320px;
+  min-width: auto;
   border: 1px solid rgba(255,255,255,0.3);
+  width: 100%;
 }
 
 .layer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   color: #1976d2;
   font-size: 16px;
   font-weight: 700;
@@ -357,22 +386,33 @@
   opacity: 0;
 }
 
+.layer-selector.collapsed .layer-header {
+  margin-bottom: 0;
+}
+
 .layer-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  width: 100%;
 }
 
 .layer-option {
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #d9dee6;
+  border-radius: 10px;
+  padding: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
   position: relative;
   overflow: hidden;
+  min-width: 98px;
+  max-width: 98px;
+  flex: 0 0 auto;
 }
 
 .layer-option::before {
@@ -392,34 +432,85 @@
 }
 
 .layer-option:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(25,118,210,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(25,118,210,0.12);
   border-color: #1976d2;
 }
 
 .layer-option.active {
-  background: linear-gradient(135deg, #1976d2, #1565c0);
-  color: white;
-  border-color: #1976d2;
-  box-shadow: 0 8px 25px rgba(25,118,210,0.3);
+  background: #f4f9ff;
+  color: #0d47a1;
+  border-color: #1e88e5;
+  box-shadow: 0 6px 16px rgba(30,136,229,0.18);
 }
 
-.layer-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-  display: block;
+.layer-thumb {
+  position: relative;
+  height: 54px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.layer-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.35), rgba(0,0,0,0.05));
+}
+
+.layer-thumb-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  color: #1976d2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+  z-index: 1;
+}
+
+.layer-thumb-osm {
+  background-image: url('https://tile.openstreetmap.org/7/30/57.png');
+}
+
+.layer-thumb-hot {
+  background-image: url('https://tile.openstreetmap.fr/hot/7/30/57.png');
+}
+
+.layer-thumb-topo {
+  background-image: url('https://tile.opentopomap.org/7/30/57.png');
+}
+
+.layer-thumb-google-satellite {
+  background-image: url('https://mt0.google.com/vt/lyrs=s&x=30&y=57&z=7');
+}
+
+.layer-thumb-traffic {
+  background-image:
+    linear-gradient(25deg, rgba(255, 59, 59, 0.55) 0 10%, transparent 10% 22%, rgba(255, 171, 64, 0.55) 22% 30%, transparent 30% 42%, rgba(76, 175, 80, 0.45) 42% 52%, transparent 52% 100%),
+    url('https://tile.openstreetmap.org/7/30/57.png');
 }
 
 .layer-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 0;
+  color: #263238;
+  line-height: 1.2;
 }
 
 .layer-description {
-  font-size: 11px;
-  opacity: 0.8;
-  line-height: 1.3;
+  display: none;
 }
 
 /* ============================================================
@@ -646,55 +737,115 @@
    NOTIFICACIONES
    ============================================================ */
 .notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 20px;
-  border-radius: 10px;
-  color: white;
+  position: relative;
+  top: auto;
+  right: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #2f455b;
   font-weight: 600;
-  z-index: 10002;
-  max-width: 400px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-  animation: slideIn 0.5s ease;
+  z-index: 1;
+  max-width: 420px;
+  min-width: 300px;
+  box-shadow: 0 12px 28px rgba(15, 43, 72, 0.18);
+  border: 1px solid #d7e2ee;
+  border-left: 4px solid #93a5b8;
+  opacity: 0;
+  transform: translateX(18px) scale(0.98);
+  transition: opacity 0.22s ease, transform 0.22s ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 15px;
+  gap: 12px;
+  pointer-events: auto;
 }
 
 .notification.success {
-  background: linear-gradient(135deg, #4caf50, #388e3c);
+  background: #f7fcf7;
+  border-left-color: #3f9f45;
 }
 
 .notification.error {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
+  background: #fff8f8;
+  border-left-color: #d84035;
 }
 
 .notification.info {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
+  background: #f5f9ff;
+  border-left-color: #2274c5;
+}
+
+.notification.warning {
+  background: #fffaf2;
+  border-left-color: #e8a23a;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.notification.hide {
+  opacity: 0;
+  transform: translateX(18px) scale(0.98);
+}
+
+.notification-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.notification-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.notification-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf2fc;
+  color: #1f4f7b;
+  flex-shrink: 0;
+}
+
+.notification-message {
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 
 .notification .close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 18px;
+  background: #ffffff;
+  border: 1px solid #d2dce8;
+  color: #64758b;
+  font-size: 16px;
   cursor: pointer;
-  opacity: 0.8;
   padding: 0;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .notification .close-btn:hover {
-  opacity: 1;
-  background: rgba(255,255,255,0.2);
+  color: #d62d20;
+  border-color: #efb3ae;
+  background: #fff;
 }
 
 /* ============================================================
@@ -768,6 +919,10 @@
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
+  .mapa-side-panels {
+    width: 100%;
+  }
+
   #mapaIncidentes { 
     height: 500px; 
   }
@@ -804,15 +959,16 @@
 
   .legend-panel,
   .layer-selector {
-    position: relative;
-    margin: 10px;
-    min-width: auto;
-    width: calc(100% - 20px);
-    margin-bottom: 10px;
+    width: 100%;
   }
 
-  .layer-options {
-    grid-template-columns: 1fr;
+  .legend-item {
+    min-width: 132px;
+  }
+
+  .layer-option {
+    min-width: 92px;
+    max-width: 92px;
   }
 
   .download-options {
@@ -831,10 +987,14 @@
   }
 
   .notification {
-    top: 10px;
-    right: 10px;
+    max-width: calc(100vw - 20px);
+    min-width: 0;
+  }
+
+  .notification-stack {
     left: 10px;
-    max-width: none;
+    right: 10px;
+    top: 10px;
   }
 
   .filtros-grid {
@@ -872,7 +1032,7 @@
 /* ============================================================
    BADGE FASE BETA EN HEADER
    ============================================================ */
-.titulo p:last-child {
+.titulo p:last-child:not(.beta-badge) {
   font-size: 1.8em;  /* Tamaño más grande */
   font-weight: 800;
   color: #faf9f7;
@@ -901,14 +1061,14 @@
 
 /* Responsive - ajustar en móviles */
 @media (max-width: 768px) {
-  .titulo p:last-child {
+  .titulo p:last-child:not(.beta-badge) {
     font-size: 1.4em;
     letter-spacing: 2px;
   }
 }
 
 @media (max-width: 480px) {
-  .titulo p:last-child {
+  .titulo p:last-child:not(.beta-badge) {
     font-size: 1.2em;
     letter-spacing: 1px;
   }
@@ -934,7 +1094,6 @@ header .titulo p.beta-badge {
   text-transform: uppercase;
   text-shadow: none;
   box-shadow: 0 8px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
-  animation: pulse 2.2s ease-in-out infinite;
   backdrop-filter: blur(2px);
 }
 
