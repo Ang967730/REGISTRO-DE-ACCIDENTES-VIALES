@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="mapa.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -15,25 +17,24 @@
     header .titulo p.beta-badge {
       display: inline-flex !important;
       align-items: center;
-      gap: 8px;
-      margin-top: 14px;
-      padding: 6px 14px;
+      gap: 7px;
+      margin-top: 12px;
+      padding: 5px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: linear-gradient(135deg, rgba(25,118,210,0.72), rgba(13,71,161,0.72));
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: linear-gradient(135deg, rgba(7,38,70,0.78), rgba(17,84,137,0.78));
       color: #ffffff !important;
-      font-size: 0.82em !important;
-      font-weight: 800;
-      letter-spacing: 1.3px;
+      font-size: 0.78em !important;
+      font-weight: 700;
+      letter-spacing: 0.9px;
       line-height: 1;
       text-transform: uppercase;
       text-shadow: none !important;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
-      animation: pulse 2.2s ease-in-out infinite;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.10);
       -webkit-text-fill-color: #ffffff !important;
       background-clip: padding-box !important;
       -webkit-background-clip: padding-box !important;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(3px);
     }
 
     header .titulo p.beta-badge::before {
@@ -41,34 +42,34 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-size: 0.72em;
+      font-size: 0.68em;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       text-transform: none;
-      color: #0d47a1;
-      background: #ffffff;
+      color: #0d3b66;
+      background: rgba(255, 255, 255, 0.92);
     }
 
     @media (max-width: 768px) {
       header .titulo p.beta-badge {
-        font-size: 0.76em !important;
-        letter-spacing: 1px;
-        padding: 5px 12px;
+        font-size: 0.72em !important;
+        letter-spacing: 0.7px;
+        padding: 5px 10px;
       }
     }
 
     @media (max-width: 480px) {
       header .titulo p.beta-badge {
-        font-size: 0.72em !important;
-        gap: 6px;
-        padding: 5px 10px;
+        font-size: 0.68em !important;
+        gap: 5px;
+        padding: 4px 9px;
       }
 
       header .titulo p.beta-badge::before {
-        font-size: 0.68em;
-        padding: 2px 6px;
+        font-size: 0.64em;
+        padding: 2px 5px;
       }
     }
   </style>
@@ -144,20 +145,21 @@
         </div>
       </div>
       
-      <div id="mapaIncidentes">
+      <div class="mapa-layout">
+        <div class="mapa-side-panels">
         
         <!-- Leyenda Interactiva -->
-        <div class="legend-panel">
+        <div class="legend-panel collapsed">
           <div class="legend-header">
             <div class="legend-title">
               <i class="fas fa-list"></i>
               Causa del Siniestro
             </div>
             <button class="legend-toggle" onclick="toggleLegend()">
-              <i class="fas fa-chevron-up" id="legendToggleIcon"></i>
+              <i class="fas fa-chevron-down" id="legendToggleIcon"></i>
             </button>
           </div>
-          <div class="legend-content" id="legendContent">
+          <div class="legend-content collapsed" id="legendContent">
             <div class="legend-item" data-type="Choque" onclick="filterByType('Choque')">
               <div class="legend-icon" style="background-color: #ff4444;">
                 <i class="fas fa-car-crash"></i>
@@ -208,44 +210,54 @@
         </div>
 
         <!-- Selector de Capas -->
-        <div class="layer-selector" id="layerSelector">
+        <div class="layer-selector collapsed" id="layerSelector">
           <div class="layer-header">
             <div class="layer-title-container">
               <i class="fas fa-layer-group"></i>
               <span>Capas del Mapa</span>
             </div>
             <button class="layer-toggle" onclick="toggleLayerSelector()">
-              <i class="fas fa-chevron-up" id="layerToggleIcon"></i>
+              <i class="fas fa-chevron-down" id="layerToggleIcon"></i>
             </button>
           </div>
-          <div class="layer-content" id="layerContent">
+          <div class="layer-content collapsed" id="layerContent">
                         <div class="layer-options">
               <div class="layer-option active" data-layer="osm" onclick="changeMapLayer('osm', this)">
-                <i class="fas fa-map layer-icon"></i>
+                <div class="layer-thumb layer-thumb-osm">
+                  <span class="layer-thumb-badge"><i class="fas fa-map"></i></span>
+                </div>
                 <div class="layer-title">Comunitario</div>
                 <div class="layer-description">Mapa base estándar</div>
               </div>
               
               <div class="layer-option" data-layer="hot" onclick="changeMapLayer('hot', this)">
-                <i class="fas fa-exclamation-triangle layer-icon"></i>
+                <div class="layer-thumb layer-thumb-hot">
+                  <span class="layer-thumb-badge"><i class="fas fa-exclamation-triangle"></i></span>
+                </div>
                 <div class="layer-title">Infraestructura</div>
                 <div class="layer-description">Zonas críticas</div>
               </div>
               
               <div class="layer-option" data-layer="topo" onclick="changeMapLayer('topo', this)">
-                <i class="fas fa-mountain layer-icon"></i>
+                <div class="layer-thumb layer-thumb-topo">
+                  <span class="layer-thumb-badge"><i class="fas fa-mountain"></i></span>
+                </div>
                 <div class="layer-title">Topográfico</div>
                 <div class="layer-description">Relieve del terreno</div>
               </div>
               
               <div class="layer-option" data-layer="traffic" onclick="changeMapLayer('traffic', this)">
-                <i class="fas fa-road layer-icon"></i>
+                <div class="layer-thumb layer-thumb-traffic">
+                  <span class="layer-thumb-badge"><i class="fas fa-road"></i></span>
+                </div>
                 <div class="layer-title">Tráfico</div>
                 <div class="layer-description">Movilidad actual</div>
               </div>
 
               <div class="layer-option" data-layer="google_satellite" onclick="changeMapLayer('google_satellite', this)">
-                <i class="fas fa-satellite layer-icon"></i>
+                <div class="layer-thumb layer-thumb-google-satellite">
+                  <span class="layer-thumb-badge"><i class="fas fa-satellite"></i></span>
+                </div>
                 <div class="layer-title">Google Satelite</div>
                 <div class="layer-description">Imagen satelital</div>
               </div>
@@ -253,6 +265,9 @@
           </div>
         </div>
 
+        </div>
+
+        <div id="mapaIncidentes">
         <!-- Controles del Mapa -->
         <div class="map-controls">
           <button class="map-control-btn" onclick="toggleHeatmapView()">
@@ -276,6 +291,7 @@
             Descargar Datos
           </button>
         </div>
+      </div>
       </div>
     </section>
   </main>
@@ -367,6 +383,7 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="mapa.js"></script>
 </body>
 
