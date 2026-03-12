@@ -312,27 +312,6 @@ function cargarMapaCalor(data) {
       
       console.log(`✅ Mapa de calor cargado con ${heatPoints.length} puntos`);
       
-      // Agregar contador de puntos en el mapa
-      const infoControl = L.control({ position: 'bottomright' });
-      infoControl.onAdd = function() {
-        const div = L.DomUtil.create('div', 'info-control');
-        div.style.cssText = `
-          background: rgba(255,255,255,0.95);
-          padding: 10px 15px;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-          font-size: 13px;
-          font-weight: 600;
-          color: #333;
-        `;
-        div.innerHTML = `
-          <i class="fas fa-map-marker-alt" style="color: #1976d2;"></i> 
-          ${puntosValidos} incidentes
-        `;
-        return div;
-      };
-      infoControl.addTo(mapaCalor);
-      
     } else {
       console.warn('⚠️ No hay puntos válidos para mostrar');
       
