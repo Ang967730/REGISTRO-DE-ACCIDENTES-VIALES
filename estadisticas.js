@@ -1070,30 +1070,51 @@ function contarPersonasInvolucradas(datos) {
 // NOTIFICACIONES Y PROGRESO
 // ============================================================
 function mostrarNotificacion(mensaje, tipo = 'info', duracion = 5000) {
+  let stack = document.getElementById('notificationStack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'notificationStack';
+    stack.className = 'notification-stack';
+    document.body.appendChild(stack);
+  }
+
+  const existingNotifications = stack.querySelectorAll('.notification');
+  if (existingNotifications.length >= 3) {
+    existingNotifications[0].remove();
+  }
+
+  const iconMap = {
+    success: 'fa-check-circle',
+    error: 'fa-exclamation-circle',
+    warning: 'fa-triangle-exclamation',
+    info: 'fa-circle-info'
+  };
+
   const notification = document.createElement('div');
   notification.className = `notification ${tipo}`;
-  
-  const iconos = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️',
-    warning: '⚠️'
-  };
-  
   notification.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <span style="font-size: 1.3em;">${iconos[tipo]}</span>
-      <span>${mensaje}</span>
+    <div class="notification-body" role="status" aria-live="polite">
+      <span class="notification-icon"><i class="fas ${iconMap[tipo] || iconMap.info}"></i></span>
+      <span class="notification-message">${mensaje}</span>
     </div>
-    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+    <button class="close-btn" type="button" aria-label="Cerrar notificacion">&times;</button>
   `;
-  
-  document.body.appendChild(notification);
-  
+
+  stack.appendChild(notification);
+  requestAnimationFrame(() => notification.classList.add('show'));
+
+  const closeButton = notification.querySelector('.close-btn');
+  closeButton.addEventListener('click', () => {
+    notification.classList.remove('show');
+    notification.classList.add('hide');
+    setTimeout(() => notification.remove(), 260);
+  });
+
   setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
+    if (notification.isConnected) {
+      notification.classList.remove('show');
+      notification.classList.add('hide');
+      setTimeout(() => notification.remove(), 260);
     }
   }, duracion);
 }
@@ -1537,9 +1558,9 @@ function agruparDatosPorPeriodo(periodo) {
   
   const labels = clavesOrdenadas.map(clave => {
     if (periodo === 'mensual') {
-      const [año, mes] = clave.split('-');
+      const [anio, mes] = clave.split('-');
       const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      return `${meses[parseInt(mes) - 1]} ${año}`;
+      return `${meses[parseInt(mes) - 1]} ${anio}`;
     } else if (periodo === 'trimestral') {
       return clave.replace('-T', ' - Trimestre ');
     } else {
@@ -3159,8 +3180,8 @@ function crearGraficaEvolucionTemporal() {
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   
   const labels = clavesOrdenadas.map(clave => {
-    const [año, mes] = clave.split('-');
-    return `${meses[parseInt(mes) - 1]} ${año}`;
+    const [anio, mes] = clave.split('-');
+    return `${meses[parseInt(mes) - 1]} ${anio}`;
   });
   
   if (chartsTransporte.evolucion) {
@@ -3594,9 +3615,36 @@ document.addEventListener('visibilitychange', function() {
 // ============================================================
 // MANEJO DE ERRORES GLOBALES
 // ============================================================
+let ultimaNotificacionErrorGlobal = 0;
+
+function esErrorNoCritico(event) {
+  const msg = (event?.message || event?.error?.message || '').toString();
+  const src = (event?.filename || '').toString();
+
+  // Ruido frecuente del navegador o de librerías externas.
+  const patronesNoCriticos = [
+    /ResizeObserver loop limit exceeded/i,
+    /Script error\.?/i,
+    /Non-Error promise rejection captured/i
+  ];
+
+  // Mensajes de bloqueo de tracking/cookies en CDNs (no rompen lógica principal).
+  if (src.includes('cdn.jsdelivr.net') && /storage|tracking|cookie/i.test(msg)) {
+    return true;
+  }
+
+  return patronesNoCriticos.some((re) => re.test(msg));
+}
+
 window.addEventListener('error', function(event) {
   console.error('❌ Error global capturado:', event.error);
-  mostrarNotificacion('⚠️ Se produjo un error. La página seguirá funcionando.', 'warning', 4000);
+  if (esErrorNoCritico(event)) return;
+
+  const ahora = Date.now();
+  if (ahora - ultimaNotificacionErrorGlobal < 15000) return;
+  ultimaNotificacionErrorGlobal = ahora;
+
+  mostrarNotificacion('⚠️ Se detectó un error no crítico. La página seguirá funcionando.', 'warning', 3500);
 });
 
 window.addEventListener('unhandledrejection', function(event) {
@@ -3614,3 +3662,5 @@ window.addEventListener('beforeunload', function() {
 console.log('✅ estadisticas.js cargado completamente');
 console.log('🔄 Sistema de tiempo real: LISTO');
 console.log(`⏱️ Próxima actualización en ${CONFIG_TIEMPO_REAL.INTERVALO_ACTUALIZACION / 1000} segundos`);
+
+
