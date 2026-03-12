@@ -501,48 +501,103 @@ button[onclick="buscarConductor()"] {
    NOTIFICACIONES - CORREGIDAS PARA NO INTERFERIR
    ============================================================ */
 .notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999; /* Menor que los modales pero mayor que el contenido */
-  max-width: 400px;
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 1;
+  max-width: 420px;
+  min-width: 300px;
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: var(--sombra-fuerte);
-  animation: slideInRight 0.3s ease;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 43, 72, 0.16);
   overflow: hidden;
   border-left: 4px solid #ccc;
+  border: 1px solid #d7e2ee;
+  opacity: 0;
+  transform: translateX(18px) scale(0.98);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: auto;
 }
 
 .notification.success { border-left-color: var(--color-secundario); }
 .notification.error { border-left-color: var(--color-error); }
 .notification.info { border-left-color: var(--color-info); }
+.notification.warning { border-left-color: #f59e0b; }
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.notification.hide {
+  opacity: 0;
+  transform: translateX(18px) scale(0.98);
+}
+
+.notification-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10002;
+  pointer-events: none;
+}
 
 .notification-content {
   display: flex;
   align-items: center;
-  padding: 15px;
+  justify-content: space-between;
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.notification-body {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.notification-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef4fb;
+  color: #1f4f7b;
+  flex-shrink: 0;
+}
+
+.notification-message {
+  color: #31475d;
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 
 .notification-close {
   background: none;
-  border: none;
-  font-size: 18px;
+  border: 1px solid #d2dce8;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
   cursor: pointer;
-  margin-left: auto;
-  color: var(--color-gris);
+  margin-left: 4px;
+  color: #607289;
   transition: var(--transition);
+  flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .notification-close:hover {
-  color: var(--color-error);
-  transform: rotate(90deg);
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  color: #d62d20;
+  border-color: #efb3ae;
+  transform: none;
 }
 
 /* ============================================================
@@ -1033,8 +1088,14 @@ button[onclick="buscarConductor()"] {
   }
 
   .notification {
-    max-width: calc(100vw - 40px);
-    margin: 0 20px;
+    max-width: calc(100vw - 32px);
+    min-width: 0;
+  }
+
+  .notification-stack {
+    left: 16px;
+    right: 16px;
+    top: 16px;
   }
 
   .progress-modal {
@@ -1811,7 +1872,6 @@ header .titulo p.beta-badge {
   text-transform: uppercase;
   text-shadow: none;
   box-shadow: 0 8px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
-  animation: pulse 2.2s ease-in-out infinite;
   backdrop-filter: blur(2px);
 }
 
