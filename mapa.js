@@ -198,6 +198,20 @@ class MapaIncidentes {
   // INICIALIZACIÓN
   // ============================================================
   
+  createMarkersLayer() {
+    if (typeof L !== 'undefined' && typeof L.markerClusterGroup === 'function') {
+      return L.markerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        maxClusterRadius: 45,
+        disableClusteringAtZoom: 16
+      });
+    }
+
+    console.warn('Leaflet.markercluster no disponible. Se usa capa normal de marcadores.');
+    return L.layerGroup();
+  }
+
       initializeMap() {
     try {
       this.map = L.map('mapaIncidentes').setView([16.75, -93.12], 11);
@@ -229,7 +243,8 @@ class MapaIncidentes {
       };
 
       this.capasBase.osm.addTo(this.map);
-      this.markersGroup = L.layerGroup().addTo(this.map);
+      this.markersGroup = this.createMarkersLayer();
+      this.markersGroup.addTo(this.map);
       this.zonasLayer = L.layerGroup();
 
       console.log("✅ Mapa inicializado");
@@ -538,10 +553,10 @@ class MapaIncidentes {
       option.value = clave;
       
       if (tipoPeriodo === 'mensual') {
-        const [año, mes] = clave.split('-');
+        const [anio, mes] = clave.split('-');
         const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        option.textContent = `${meses[parseInt(mes) - 1]} ${año}`;
+        option.textContent = `${meses[parseInt(mes) - 1]} ${anio}`;
       } else if (tipoPeriodo === 'trimestral') {
         option.textContent = clave.replace('-T', ' - Trimestre ');
       }
@@ -1363,35 +1378,51 @@ class MapaIncidentes {
   // ============================================================
   
   mostrarNotificacion(mensaje, tipo = 'info', duracion = 5000) {
-    const existingNotifications = document.querySelectorAll('.notification');
+    let stack = document.getElementById('notificationStack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'notificationStack';
+      stack.className = 'notification-stack';
+      document.body.appendChild(stack);
+    }
+
+    const existingNotifications = stack.querySelectorAll('.notification');
     if (existingNotifications.length >= 3) {
       existingNotifications[0].remove();
     }
 
+    const iconMap = {
+      success: 'fa-check-circle',
+      error: 'fa-exclamation-circle',
+      warning: 'fa-triangle-exclamation',
+      info: 'fa-circle-info'
+    };
+
     const notification = document.createElement('div');
     notification.className = `notification ${tipo}`;
-    
-    const iconos = {
-      success: '✅',
-      error: '❌',
-      info: 'ℹ️',
-      warning: '⚠️'
-    };
-    
     notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.2em;">${iconos[tipo]}</span>
-        <span>${mensaje}</span>
+      <div class="notification-body" role="status" aria-live="polite">
+        <span class="notification-icon"><i class="fas ${iconMap[tipo] || iconMap.info}"></i></span>
+        <span class="notification-message">${mensaje}</span>
       </div>
-      <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+      <button class="close-btn" type="button" aria-label="Cerrar notificacion">&times;</button>
     `;
-    
-    document.body.appendChild(notification);
-    
+
+    stack.appendChild(notification);
+    requestAnimationFrame(() => notification.classList.add('show'));
+
+    const closeButton = notification.querySelector('.close-btn');
+    closeButton.addEventListener('click', () => {
+      notification.classList.remove('show');
+      notification.classList.add('hide');
+      setTimeout(() => notification.remove(), 260);
+    });
+
     setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
+      if (notification.isConnected) {
+        notification.classList.remove('show');
+        notification.classList.add('hide');
+        setTimeout(() => notification.remove(), 260);
       }
     }, duracion);
   }
@@ -1615,6 +1646,25 @@ document.addEventListener("DOMContentLoaded", function () {
   
   try {
     mapaInstance = new MapaIncidentes();
+
+    const legendContent = document.getElementById('legendContent');
+    const legendPanel = document.querySelector('.legend-panel');
+    const legendIcon = document.getElementById('legendToggleIcon');
+    if (legendContent && legendPanel && legendIcon) {
+      legendContent.classList.add('collapsed');
+      legendPanel.classList.add('collapsed');
+      legendIcon.className = 'fas fa-chevron-down';
+    }
+
+    const layerContent = document.getElementById('layerContent');
+    const layerSelector = document.getElementById('layerSelector');
+    const layerIcon = document.getElementById('layerToggleIcon');
+    if (layerContent && layerSelector && layerIcon) {
+      layerContent.classList.add('collapsed');
+      layerSelector.classList.add('collapsed');
+      layerIcon.className = 'fas fa-chevron-down';
+    }
+
     mapaInstance.cargarDatosMapaCalor(false);
     
     const modalDescarga = document.getElementById('modalDescarga');
@@ -1652,6 +1702,8 @@ document.addEventListener("DOMContentLoaded", function () {
 console.log('✅ mapa.js cargado completamente');
 console.log('🎯 Columna de coordenadas: 43 (CORRECTO)');
 console.log('📊 Sistema listo para mostrar el 100% de las noticias');
+
+
 
 
 
