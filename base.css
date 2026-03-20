@@ -17,6 +17,7 @@ body {
   background: linear-gradient(135deg, #f1f1f1 0%, #ffffff 100%);
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -162,11 +163,15 @@ header:hover img.fondo {
   top: 0;
   z-index: 100;
   backdrop-filter: blur(8px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .menu a {
   text-decoration: none;
   margin: 0;
+  flex: 0 0 auto;
 }
 
 .menu a.active button {
@@ -356,39 +361,57 @@ footer {
    ============================================================ */
 @media (max-width: 768px) {
   header { 
-    height: 250px; 
+    height: 230px; 
+  }
+
+  .titulo {
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(8, 25, 41, 0.16), rgba(8, 25, 41, 0.38));
+    backdrop-filter: blur(2px);
   }
   
   .titulo h1 { 
-    font-size: 1.65rem; 
+    font-size: 1.45rem; 
   }
   
   .titulo p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .estrategia-nacional {
-    font-size: 0.98rem;
+    font-size: 0.9rem;
   }
   
   .menu { 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 10px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
   }
   
   .menu a {
-    width: 100%;
-    max-width: 300px;
+    width: auto;
+    max-width: none;
   }
   
   .menu button {
-    width: 100%;
+    width: auto;
     justify-content: center;
+    padding: 10px 13px;
+    font-size: 12px;
+    white-space: nowrap;
+    min-height: 40px;
   }
   
   .contenido-principal {
-    padding: 0 15px;
+    margin: 26px auto;
+    padding: 0 14px;
   }
   
   .footer-content {
@@ -398,16 +421,32 @@ footer {
 }
 
 @media (max-width: 480px) {
+  header {
+    height: 210px;
+  }
+
+  .titulo {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    padding: 8px 10px;
+  }
+
   .titulo h1 {
-    font-size: 1.45rem;
+    font-size: 1.2rem;
   }
 
   .titulo p {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
   }
 
   .estrategia-nacional {
-    font-size: 0.92rem;
+    font-size: 0.8rem;
+  }
+
+  .menu button {
+    padding: 9px 12px;
+    font-size: 11px;
   }
 }
 
