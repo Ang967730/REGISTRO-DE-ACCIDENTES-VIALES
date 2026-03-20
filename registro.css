@@ -504,25 +504,46 @@ button[onclick="buscarConductor()"] {
   position: relative;
   top: auto;
   right: auto;
-  z-index: 1;
-  max-width: 420px;
-  min-width: 300px;
-  background: white;
+  padding: 12px 14px;
   border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(15, 43, 72, 0.16);
-  overflow: hidden;
-  border-left: 4px solid #ccc;
+  color: #2f455b;
+  font-weight: 600;
+  z-index: 1;
+  max-width: 440px;
+  min-width: 300px;
+  box-shadow: 0 12px 28px rgba(15, 43, 72, 0.18);
   border: 1px solid #d7e2ee;
+  border-left: 4px solid #93a5b8;
   opacity: 0;
   transform: translateX(18px) scale(0.98);
   transition: opacity 0.22s ease, transform 0.22s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  backdrop-filter: blur(6px);
   pointer-events: auto;
 }
 
-.notification.success { border-left-color: var(--color-secundario); }
-.notification.error { border-left-color: var(--color-error); }
-.notification.info { border-left-color: var(--color-info); }
-.notification.warning { border-left-color: #f59e0b; }
+.notification.success {
+  background: #f7fcf7;
+  border-left-color: #3f9f45;
+}
+
+.notification.error {
+  background: #fff8f8;
+  border-left-color: #d84035;
+}
+
+.notification.info {
+  background: #f5f9ff;
+  border-left-color: #2274c5;
+}
+
+.notification.warning {
+  background: #fffaf2;
+  border-left-color: #e8a23a;
+}
 
 .notification.show {
   opacity: 1;
@@ -545,14 +566,6 @@ button[onclick="buscarConductor()"] {
   pointer-events: none;
 }
 
-.notification-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  gap: 12px;
-}
-
 .notification-body {
   display: flex;
   align-items: center;
@@ -573,31 +586,31 @@ button[onclick="buscarConductor()"] {
 }
 
 .notification-message {
-  color: #31475d;
-  font-weight: 600;
   font-size: 0.92rem;
   line-height: 1.35;
 }
 
-.notification-close {
-  background: none;
+.notification .close-btn {
+  background: #ffffff;
   border: 1px solid #d2dce8;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  color: #64758b;
   font-size: 16px;
   cursor: pointer;
-  margin-left: 4px;
-  color: #607289;
-  transition: var(--transition);
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
   flex-shrink: 0;
-  pointer-events: auto;
 }
 
-.notification-close:hover {
+.notification .close-btn:hover {
   color: #d62d20;
   border-color: #efb3ae;
-  transform: none;
+  background: #fff;
 }
 
 /* ============================================================
@@ -1908,5 +1921,452 @@ header .titulo p.beta-badge::before {
   header .titulo p.beta-badge::before {
     font-size: 0.68em;
     padding: 2px 6px;
+  }
+}
+
+/* ============================================================
+   REFRESH VISUAL - REGISTRO DE INCIDENTES
+   ============================================================ */
+main .registro-seccion {
+  background: #ffffff;
+  border: 1px solid #dce5ef;
+  border-radius: 20px;
+  box-shadow: 0 16px 34px rgba(16, 42, 67, 0.12);
+}
+
+main .registro-seccion::before {
+  height: 3px;
+  background: linear-gradient(90deg, #0f4c81, #1976d2, #64b5f6);
+  animation: none;
+}
+
+main .registro-seccion .titulo-seccion {
+  margin-top: 4px;
+  margin-bottom: 16px;
+  color: #12395e;
+}
+
+main .registro-seccion .titulo-seccion::after {
+  width: 74px;
+  height: 3px;
+  background: linear-gradient(90deg, #0f4c81, #1e88e5);
+}
+
+main .registro-seccion form {
+  gap: 18px 20px;
+}
+
+main .registro-seccion .fieldset-grupo {
+  border: 1px solid #d7e2ef;
+  border-radius: 16px;
+  padding: 18px;
+  margin: 10px 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbfe 100%);
+  box-shadow: 0 6px 14px rgba(16, 42, 67, 0.07);
+}
+
+main .registro-seccion .fieldset-grupo:hover {
+  transform: none;
+  border-color: #c4d7ec;
+  box-shadow: 0 10px 20px rgba(16, 42, 67, 0.1);
+}
+
+main .registro-seccion .fieldset-grupo legend {
+  color: #12395e;
+  font-size: 0.98rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border: 1px solid #d7e3ef;
+  box-shadow: none;
+  border-radius: 10px;
+}
+
+main .registro-seccion .fieldset-grupo > * {
+  margin-bottom: 14px;
+}
+
+main .registro-seccion form label {
+  font-size: 0.86rem;
+  color: #2f4258;
+  gap: 6px;
+}
+
+main .registro-seccion form label i {
+  color: #1d5f93;
+}
+
+main .registro-seccion form input,
+main .registro-seccion form select,
+main .registro-seccion form textarea {
+  border: 1px solid #cfdceb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #24384e;
+  font-size: 0.92rem;
+  padding: 11px 13px;
+}
+
+main .registro-seccion form input::placeholder,
+main .registro-seccion form textarea::placeholder {
+  color: #8a9db1;
+}
+
+main .registro-seccion form input:hover,
+main .registro-seccion form select:hover,
+main .registro-seccion form textarea:hover {
+  border-color: #acc7e0;
+}
+
+main .registro-seccion form input:focus,
+main .registro-seccion form select:focus,
+main .registro-seccion form textarea:focus {
+  border-color: #1e6ea8;
+  box-shadow: 0 0 0 3px rgba(30, 110, 168, 0.16);
+  transform: none;
+}
+
+main .registro-seccion form textarea {
+  min-height: 110px;
+}
+
+main .registro-seccion .form-actions {
+  margin-top: 16px;
+}
+
+main .registro-seccion form button,
+main .registro-seccion .btn {
+  border-radius: 12px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  padding: 12px 24px;
+  box-shadow: 0 10px 22px rgba(15, 76, 129, 0.28);
+}
+
+main .registro-seccion form button:hover,
+main .registro-seccion .btn:hover {
+  transform: translateY(-1px);
+}
+
+main .registro-seccion .file-upload-area {
+  border: 1px dashed #8fb6da;
+  border-radius: 14px;
+  min-height: 130px;
+  padding: 26px 18px;
+  background: linear-gradient(135deg, #f5f9ff, #eef4fb);
+}
+
+main .registro-seccion .file-upload-text {
+  font-size: 0.98rem;
+  color: #1a5788;
+}
+
+main .registro-seccion .file-upload-text i {
+  animation: none;
+}
+
+main .registro-seccion .file-upload-hint {
+  font-size: 0.82rem;
+}
+
+main .registro-seccion .file-preview {
+  gap: 12px;
+  margin-top: 14px;
+}
+
+main .registro-seccion .file-preview-item {
+  border: 1px solid #d8e3ef;
+  box-shadow: 0 6px 14px rgba(16, 42, 67, 0.08);
+}
+
+main .registro-seccion .transport-options {
+  gap: 12px;
+}
+
+main .registro-seccion .option-card {
+  border: 1px solid #d6e3f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 14px rgba(16, 42, 67, 0.07);
+}
+
+main .registro-seccion .transport-option input[type="radio"]:checked + .option-card {
+  border-color: #1f73ad;
+  box-shadow: 0 10px 22px rgba(31, 115, 173, 0.2);
+}
+
+@media (max-width: 900px) {
+  main .registro-seccion {
+    padding: 26px 18px;
+  }
+
+  main .registro-seccion form {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* ============================================================
+   MEJORAS UX FORMULARIO (VALIDACION + CTA + UPLOAD)
+   ============================================================ */
+main .registro-seccion .field-has-error {
+  color: #a43232;
+}
+
+main .registro-seccion form input.is-invalid,
+main .registro-seccion form select.is-invalid,
+main .registro-seccion form textarea.is-invalid {
+  border-color: #d64b4b;
+  box-shadow: 0 0 0 3px rgba(214, 75, 75, 0.12);
+  background: #fff9f9;
+}
+
+main .registro-seccion .field-error-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b33a3a;
+}
+
+main .registro-seccion .validation-summary {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  border: 1px solid #efb5b5;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff8f8 0%, #fff1f1 100%);
+  padding: 12px 14px;
+  box-shadow: 0 8px 18px rgba(179, 58, 58, 0.08);
+}
+
+main .registro-seccion .validation-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #8f2424;
+}
+
+main .registro-seccion .validation-summary ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+main .registro-seccion .validation-summary-link {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #f0cccc;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #6f2c2c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+main .registro-seccion .validation-summary-link:hover {
+  border-color: #e4a4a4;
+  background: #fff7f7;
+}
+
+main .registro-seccion .form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+main .registro-seccion .form-actions .btn {
+  min-width: 220px;
+}
+
+main .registro-seccion .form-actions #respuesta {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+main .registro-seccion .form-actions .btn-primary {
+  background: linear-gradient(135deg, #0f5d93, #1976d2);
+  box-shadow: 0 12px 24px rgba(15, 93, 147, 0.28);
+}
+
+main .registro-seccion .form-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #0d4d7c, #145ea9);
+}
+
+main .registro-seccion .form-actions .btn-secondary {
+  background: #ffffff;
+  color: #244260;
+  border: 1px solid #c6d6e5;
+  box-shadow: 0 8px 16px rgba(36, 66, 96, 0.12);
+}
+
+main .registro-seccion .form-actions .btn-secondary:hover {
+  background: #f6faff;
+  border-color: #9ebad4;
+}
+
+main .registro-seccion .upload-status {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2e5c84;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(117, 157, 193, 0.38);
+}
+
+main .registro-seccion .file-upload-area.is-uploading {
+  border-color: #2f7eb7;
+  background: linear-gradient(135deg, #e9f4ff, #dceeff);
+}
+
+main .registro-seccion .file-upload-area.is-uploading .file-upload-text i {
+  animation: pulseUploader 1.1s ease-in-out infinite;
+}
+
+main .registro-seccion .file-upload-area.has-files .upload-status {
+  color: #166534;
+  border-color: rgba(22, 101, 52, 0.24);
+  background: rgba(220, 252, 231, 0.7);
+}
+
+main .registro-seccion .file-upload-area.is-maxed {
+  border-color: #1d6e55;
+  background: linear-gradient(135deg, #ecfdf4, #e4f7ee);
+}
+
+main .registro-seccion .file-upload-area.is-maxed .upload-status {
+  color: #0f5d44;
+}
+
+@keyframes pulseUploader {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (max-width: 768px) {
+  main .registro-seccion .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  main .registro-seccion .form-actions .btn {
+    min-width: 0;
+    width: 100%;
+  }
+
+  main .registro-seccion .validation-summary {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  main .registro-seccion .validation-summary-title {
+    font-size: 0.84rem;
+  }
+
+  main .registro-seccion .validation-summary-link {
+    font-size: 0.78rem;
+    padding: 7px 9px;
+  }
+
+  main .registro-seccion .upload-status {
+    font-size: 0.75rem;
+  }
+}
+
+/* ============================================================
+   AJUSTES GLOBALES MOVIL - REGISTRO
+   ============================================================ */
+@media (max-width: 768px) {
+  .registro-seccion {
+    padding: 22px 14px !important;
+    border-radius: 14px;
+  }
+
+  form,
+  main .registro-seccion form {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .fieldset-grupo,
+  main .registro-seccion .fieldset-grupo {
+    padding: 14px 12px !important;
+    margin: 12px 0;
+  }
+
+  .coordenadas-manuales-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #mapa {
+    height: 270px;
+  }
+
+  .notification {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .modal-overlay {
+    padding: 10px !important;
+  }
+
+  .modal-content,
+  .modal-overlay .modal-content {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88vh !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-header {
+    padding: 18px 14px !important;
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  .modal-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .modal-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .transporte-extra-panel {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .registro-seccion {
+    padding: 18px 10px !important;
+  }
+
+  .modal-header h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .modal-header .subtitle {
+    font-size: 0.88rem !important;
+  }
+
+  #mapa {
+    height: 240px;
   }
 }
