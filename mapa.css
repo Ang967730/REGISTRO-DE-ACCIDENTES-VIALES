@@ -501,6 +501,7 @@
     url('https://tile.openstreetmap.org/7/30/57.png');
 }
 
+
 .layer-title {
   font-size: 12px;
   font-weight: 600;
@@ -1130,5 +1131,89 @@ header .titulo p.beta-badge::before {
   header .titulo p.beta-badge::before {
     font-size: 0.68em;
     padding: 2px 6px;
+  }
+}
+
+/* ============================================================
+   AJUSTES GLOBALES MOVIL - MAPA
+   ============================================================ */
+@media (max-width: 768px) {
+  .mapa-seccion {
+    padding: 20px 12px !important;
+    border-radius: 14px;
+  }
+
+  #mapaIncidentes {
+    height: 58vh !important;
+    min-height: 320px;
+    border-radius: 12px;
+  }
+
+  .filtros-avanzados {
+    padding: 14px 10px !important;
+  }
+
+  .legend-item {
+    min-width: 118px !important;
+  }
+
+  .layer-option {
+    min-width: 80px !important;
+    max-width: none !important;
+  }
+
+  .map-controls {
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .notification {
+    min-width: 0 !important;
+    width: 100%;
+    max-width: 100% !important;
+  }
+
+  .modal-overlay {
+    padding: 10px !important;
+  }
+
+  .modal-content,
+  .modal-descarga {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 88vh !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .modal-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #mapaIncidentes {
+    height: 54vh !important;
+    min-height: 280px;
+  }
+
+  .legend-item {
+    min-width: 104px !important;
+    padding: 7px 8px;
+  }
+
+  .layer-option {
+    min-width: 72px !important;
+    padding: 6px;
   }
 }
