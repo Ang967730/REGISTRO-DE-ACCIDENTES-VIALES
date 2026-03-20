@@ -3500,3 +3500,85 @@ body.dashboard-enterprise .btn-limpiar-transporte {
     gap: 10px;
   }
 }
+
+/* ============================================================
+   AJUSTES GLOBALES MOVIL - ESTADISTICAS
+   ============================================================ */
+@media (max-width: 768px) {
+  .resumen-general,
+  .filtro-municipio-global,
+  .analytics-panel,
+  .analytics-content,
+  .transport-type-filter,
+  .cross-analysis-selector,
+  .insights-container {
+    padding: 14px !important;
+    border-radius: 14px;
+  }
+
+  .stats-grid-main,
+  .charts-container,
+  .charts-container-perfil,
+  .transport-charts-container,
+  .municipio-filter-container,
+  .selector-wrapper {
+    grid-template-columns: 1fr !important;
+  }
+
+  .selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .chart-card,
+  .chart-card-temporal,
+  .chart-card-large,
+  .transport-chart-card {
+    min-width: 0 !important;
+    padding: 14px !important;
+  }
+
+  .chart-card canvas,
+  .chart-card-temporal canvas,
+  .chart-card-large canvas,
+  .transport-chart-card canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .notification {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  body.dashboard-enterprise .stats-grid-main,
+  body.dashboard-enterprise .charts-container,
+  body.dashboard-enterprise .charts-container-perfil,
+  body.dashboard-enterprise .transport-charts-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .resumen-general h2,
+  .analytics-panel h3,
+  .transport-header h4 {
+    font-size: 1.15rem !important;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px !important;
+  }
+
+  .chart-card,
+  .chart-card-temporal,
+  .chart-card-large,
+  .transport-chart-card {
+    padding: 12px !important;
+  }
+}
