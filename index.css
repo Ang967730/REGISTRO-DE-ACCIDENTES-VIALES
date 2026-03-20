@@ -977,3 +977,51 @@ body {
     letter-spacing: 1px;
   }
 }
+
+/* ============================================================
+   AJUSTES MOVILES FINALES
+   ============================================================ */
+@media (max-width: 768px) {
+  .hero {
+    padding: 30px 18px;
+    border-radius: 16px;
+  }
+
+  .hero-content p:last-child {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    text-align: center;
+    word-break: break-word;
+  }
+
+  .tarjetas {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tarjeta {
+    padding: 22px 16px;
+  }
+
+  .mapa-calor-preview,
+  .estadisticas-rapidas {
+    padding: 20px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-content h2 {
+    font-size: 1.3rem;
+    line-height: 1.28;
+  }
+
+  .hero-content p {
+    font-size: 0.9rem;
+  }
+
+  .mapa-container {
+    height: 300px;
+  }
+}
