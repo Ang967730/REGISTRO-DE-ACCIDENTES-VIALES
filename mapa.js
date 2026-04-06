@@ -19,6 +19,10 @@ class MapaIncidentes {
     this.tipoPeriodoFilter = 'todos';
     this.periodoSeleccionado = '';
     this.isLoading = false;
+    this.isMapExpanded = false;
+    this.isExpandedSidePanelHidden = false;
+    this.mapExpandScrollY = 0;
+    this.expandedPanelTab = 'capas';
     this.map = null;
     this.capasBase = {};
     this.zonasPeligrosas = [];
@@ -525,6 +529,9 @@ class MapaIncidentes {
       const trimestre = Math.floor(fecha.getMonth() / 3) + 1;
       const claveTrimestral = `${fecha.getFullYear()}-T${trimestre}`;
       periodos[claveTrimestral] = periodos[claveTrimestral] || { tipo: 'trimestral', fecha };
+
+      const claveAnual = `${fecha.getFullYear()}`;
+      periodos[claveAnual] = periodos[claveAnual] || { tipo: 'anual', fecha };
     });
     
     this.periodosDisponibles = periodos;
@@ -534,15 +541,20 @@ class MapaIncidentes {
     const tipoPeriodo = this.tipoPeriodoFilter;
     const selector = document.getElementById('selectorPeriodo');
     const container = document.getElementById('selectorPeriodoContainer');
+    const expSelector = document.getElementById('expSelectorPeriodo');
+    const expContainer = document.getElementById('expSelectorPeriodoContainer');
     
     if (tipoPeriodo === 'todos') {
-      container.style.display = 'none';
+      if (container) container.style.display = 'none';
+      if (expContainer) expContainer.style.display = 'none';
       this.periodoSeleccionado = '';
       return;
     }
     
-    container.style.display = 'block';
-    selector.innerHTML = '<option value="">Todos los períodos</option>';
+    if (container) container.style.display = 'block';
+    if (expContainer) expContainer.style.display = 'block';
+    if (selector) selector.innerHTML = '<option value="">Todos los períodos</option>';
+    if (expSelector) expSelector.innerHTML = '<option value="">Todos los períodos</option>';
     
     const periodosOrdenados = Object.keys(this.periodosDisponibles)
       .filter(key => this.periodosDisponibles[key].tipo === tipoPeriodo)
@@ -559,10 +571,16 @@ class MapaIncidentes {
         option.textContent = `${meses[parseInt(mes) - 1]} ${anio}`;
       } else if (tipoPeriodo === 'trimestral') {
         option.textContent = clave.replace('-T', ' - Trimestre ');
+      } else if (tipoPeriodo === 'anual') {
+        option.textContent = `Año ${clave}`;
       }
       
-      selector.appendChild(option);
+      if (selector) selector.appendChild(option.cloneNode(true));
+      if (expSelector) expSelector.appendChild(option);
     });
+
+    if (selector && this.periodoSeleccionado) selector.value = this.periodoSeleccionado;
+    if (expSelector && this.periodoSeleccionado) expSelector.value = this.periodoSeleccionado;
   }
 
   // ============================================================
@@ -702,10 +720,12 @@ class MapaIncidentes {
     if (this.showZonasPeligrosas) {
       this.visualizarZonasPeligrosas();
       if (btn) btn.textContent = 'Ocultar Zonas Peligrosas';
+      this.setControlTooltip('zonasText', 'Ocultar zonas peligrosas');
       this.mostrarNotificacion('Zonas peligrosas activadas', 'info', 2000);
     } else {
       this.zonasLayer.clearLayers();
       if (btn) btn.textContent = 'Mostrar Zonas Peligrosas';
+      this.setControlTooltip('zonasText', 'Mostrar zonas peligrosas');
       this.mostrarNotificacion('Zonas peligrosas desactivadas', 'info', 2000);
     }
   }
@@ -812,7 +832,53 @@ class MapaIncidentes {
   // ============================================================
   // FILTROS
   // ============================================================
-  
+
+  cumpleFiltrosContextuales(row) {
+    // Filtro por municipio
+    if (this.currentMunicipioFilter) {
+      const municipio = row[this.COLUMNAS.MUNICIPIO] || '';
+      if (municipio !== this.currentMunicipioFilter) return false;
+    }
+
+    // Filtro por período
+    if (this.tipoPeriodoFilter !== 'todos' && this.periodoSeleccionado) {
+      const fechaStr = row[this.COLUMNAS.FECHA_SINIESTRO];
+      if (!fechaStr) return false;
+
+      let fecha = null;
+      if (fechaStr.includes('/')) {
+        const partes = fechaStr.split(' ')[0].split('/');
+        if (partes.length === 3) {
+          fecha = new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+      } else if (fechaStr.includes('-')) {
+        fecha = new Date(fechaStr.split(' ')[0]);
+      }
+
+      if (!fecha || isNaN(fecha)) return false;
+
+      let claveRegistro = '';
+      if (this.tipoPeriodoFilter === 'mensual') {
+        claveRegistro = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+      } else if (this.tipoPeriodoFilter === 'trimestral') {
+        const trimestre = Math.floor(fecha.getMonth() / 3) + 1;
+        claveRegistro = `${fecha.getFullYear()}-T${trimestre}`;
+      } else if (this.tipoPeriodoFilter === 'anual') {
+        claveRegistro = `${fecha.getFullYear()}`;
+      }
+
+      if (claveRegistro !== this.periodoSeleccionado) return false;
+    }
+
+    // Filtro por fallecidos
+    if (this.currentFallecidosFilter > 0) {
+      const fallecidos = parseInt(row[this.COLUMNAS.TOTAL_FALLECIDOS] || 0);
+      if (fallecidos < this.currentFallecidosFilter) return false;
+    }
+
+    return true;
+  }
+
   aplicarFiltros() {
     console.log('\n🔍 ========== APLICANDO FILTROS ==========');
     console.log(`Datos antes de filtrar: ${this.allIncidentsData.length}`);
@@ -823,48 +889,8 @@ class MapaIncidentes {
         const causa = row[this.COLUMNAS.CAUSA_SINIESTRO] || 'Otro';
         if (causa !== this.currentTypeFilter) return false;
       }
-      
-      // Filtro por municipio
-      if (this.currentMunicipioFilter) {
-        const municipio = row[this.COLUMNAS.MUNICIPIO] || '';
-        if (municipio !== this.currentMunicipioFilter) return false;
-      }
-      
-      // Filtro por período
-      if (this.tipoPeriodoFilter !== 'todos' && this.periodoSeleccionado) {
-        const fechaStr = row[this.COLUMNAS.FECHA_SINIESTRO];
-        if (!fechaStr) return false;
-        
-        let fecha = null;
-        if (fechaStr.includes('/')) {
-          const partes = fechaStr.split(' ')[0].split('/');
-          if (partes.length === 3) {
-            fecha = new Date(partes[2], partes[1] - 1, partes[0]);
-          }
-        } else if (fechaStr.includes('-')) {
-          fecha = new Date(fechaStr.split(' ')[0]);
-        }
-        
-        if (!fecha || isNaN(fecha)) return false;
-        
-        let claveRegistro = '';
-        if (this.tipoPeriodoFilter === 'mensual') {
-          claveRegistro = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-        } else if (this.tipoPeriodoFilter === 'trimestral') {
-          const trimestre = Math.floor(fecha.getMonth() / 3) + 1;
-          claveRegistro = `${fecha.getFullYear()}-T${trimestre}`;
-        }
-        
-        if (claveRegistro !== this.periodoSeleccionado) return false;
-      }
-      
-      // Filtro por fallecidos
-      if (this.currentFallecidosFilter > 0) {
-        const fallecidos = parseInt(row[this.COLUMNAS.TOTAL_FALLECIDOS] || 0);
-        if (fallecidos < this.currentFallecidosFilter) return false;
-      }
-      
-      return true;
+
+      return this.cumpleFiltrosContextuales(row);
     });
     
     console.log(`✅ Datos después de filtrar: ${this.filteredIncidentsData.length}`);
@@ -905,7 +931,9 @@ class MapaIncidentes {
       'Otro': 0
     };
     
-    this.filteredIncidentsData.forEach(row => {
+    const dataForCounters = this.allIncidentsData.filter(row => this.cumpleFiltrosContextuales(row));
+
+    dataForCounters.forEach(row => {
       const causa = row[this.COLUMNAS.CAUSA_SINIESTRO] || 'Otro';
       if (contadores.hasOwnProperty(causa)) {
         contadores[causa]++;
@@ -923,7 +951,7 @@ class MapaIncidentes {
     
     const countAll = document.getElementById('count-all');
     if (countAll) {
-      countAll.textContent = this.filteredIncidentsData.length;
+      countAll.textContent = dataForCounters.length;
     }
   }
 
@@ -973,16 +1001,14 @@ class MapaIncidentes {
           <i class="fas fa-exclamation-triangle"></i> Resumen del Siniestro
         </h4>
         
-        ${coordsInfo ? `
+        ${coordsInfo && coordsInfo.tipo !== 'exactas' ? `
         <div style="background: linear-gradient(135deg, ${tipoInfo.color}22, ${tipoInfo.color}11); 
                     border-left: 3px solid ${tipoInfo.color}; padding: 8px 12px; margin-bottom: 12px; 
                     border-radius: 4px; font-size: 12px;">
           <strong style="color: ${tipoInfo.color};">${tipoInfo.icono} ${tipoInfo.texto}</strong>
-          ${coordsInfo.tipo !== 'exactas' ? `
           <div style="color: #666; margin-top: 4px; font-size: 11px;">
             La ubicación mostrada es aproximada
           </div>
-          ` : ''}
         </div>
         ` : ''}
         
@@ -1066,6 +1092,83 @@ class MapaIncidentes {
   // ============================================================
   // CONTROLES
   // ============================================================
+
+  setExpandedPanelTab(tabKey = 'capas') {
+    const sidePanels = document.querySelector('.mapa-side-panels');
+    if (!sidePanels) return;
+
+    const allowedTabs = ['causas', 'capas'];
+    const tab = allowedTabs.includes(tabKey) ? tabKey : 'capas';
+    this.expandedPanelTab = tab;
+    sidePanels.setAttribute('data-expanded-tab', tab);
+    sidePanels.scrollTop = 0;
+
+    const legendPanel = document.querySelector('.legend-panel');
+    const layerSelector = document.getElementById('layerSelector');
+    const escenariosPanel = document.getElementById('escenariosPanel');
+    const isExpandedMode = document.body.classList.contains('mapa-expanded-mode');
+    const hasExpandedTabs = document.querySelectorAll('.expanded-tab').length > 0;
+
+    if (isExpandedMode && hasExpandedTabs) {
+      if (legendPanel) legendPanel.style.display = tab === 'causas' ? 'block' : 'none';
+      if (layerSelector) layerSelector.style.display = tab === 'capas' ? 'block' : 'none';
+      if (escenariosPanel) escenariosPanel.style.display = 'block';
+    } else if (isExpandedMode) {
+      if (legendPanel) legendPanel.style.display = 'block';
+      if (layerSelector) layerSelector.style.display = 'block';
+      if (escenariosPanel) escenariosPanel.style.display = 'block';
+    }
+
+    if (hasExpandedTabs) {
+      document.querySelectorAll('.expanded-tab').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+    }
+
+    // No forzar expansión automática aquí; respetar estados colapsados.
+  }
+
+  actualizarEstadoPanelLateral() {
+    const body = document.body;
+    const icon = document.getElementById('panelCollapseIcon');
+    const btn = icon?.closest('.panel-collapse-btn');
+
+    if (!body) return;
+
+    body.classList.toggle('mapa-side-collapsed', this.isExpandedSidePanelHidden);
+    if (!this.isExpandedSidePanelHidden) {
+      body.classList.remove('mapa-collapsed-tools-open');
+      window.updateCollapsedToolsToggleUI?.();
+    }
+
+    if (icon) {
+      icon.className = this.isExpandedSidePanelHidden ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+    }
+    if (btn) {
+      const title = this.isExpandedSidePanelHidden ? 'Mostrar panel' : 'Ocultar panel';
+      btn.setAttribute('title', title);
+      btn.setAttribute('aria-label', title);
+    }
+
+    setTimeout(() => {
+      if (this.map) this.map.invalidateSize(true);
+    }, 200);
+  }
+
+  toggleExpandedSidePanel() {
+    if (!this.isMapExpanded) return;
+    this.isExpandedSidePanelHidden = !this.isExpandedSidePanelHidden;
+    this.actualizarEstadoPanelLateral();
+  }
+
+  setControlTooltip(textElementId, tooltipText) {
+    const textEl = document.getElementById(textElementId);
+    const button = textEl?.closest('.map-control-btn');
+    if (!button) return;
+
+    button.setAttribute('data-tooltip', tooltipText);
+    button.setAttribute('title', tooltipText);
+  }
   
   toggleHeatmapView() {
     this.showHeatmapLayer = !this.showHeatmapLayer;
@@ -1076,11 +1179,13 @@ class MapaIncidentes {
         this.map.addLayer(this.heatMapLayer);
       }
       if (btn) btn.textContent = 'Ocultar Mapa de Calor';
+      this.setControlTooltip('heatmapText', 'Ocultar mapa de calor');
     } else {
       if (this.heatMapLayer && this.map.hasLayer(this.heatMapLayer)) {
         this.map.removeLayer(this.heatMapLayer);
       }
       if (btn) btn.textContent = 'Mostrar Mapa de Calor';
+      this.setControlTooltip('heatmapText', 'Mostrar mapa de calor');
     }
   }
 
@@ -1093,14 +1198,79 @@ class MapaIncidentes {
         this.map.addLayer(this.markersGroup);
       }
       if (btn) btn.textContent = 'Ocultar Marcadores';
+      this.setControlTooltip('markersText', 'Ocultar marcadores');
     } else {
       if (this.markersGroup && this.map.hasLayer(this.markersGroup)) {
         this.map.removeLayer(this.markersGroup);
       }
       if (btn) btn.textContent = 'Mostrar Marcadores';
+      this.setControlTooltip('markersText', 'Mostrar marcadores');
     }
     
     this.updateMapWithFilteredData();
+  }
+
+  toggleMapExpand() {
+    this.isMapExpanded = !this.isMapExpanded;
+
+    const body = document.body;
+    const btnText = document.getElementById('expandMapText');
+    const btn = btnText?.closest('.map-control-btn');
+    const icon = btn?.querySelector('i');
+
+    if (this.isMapExpanded) {
+      this.mapExpandScrollY = window.scrollY || window.pageYOffset || 0;
+      this.isExpandedSidePanelHidden = false;
+      body.classList.add('mapa-expanded-mode');
+      body.classList.remove('mapa-side-collapsed');
+      body.classList.remove('mapa-collapsed-tools-open');
+      if (btnText) btnText.textContent = 'Salir Pantalla Completa';
+      if (icon) icon.className = 'fas fa-compress';
+      if (btn) btn.classList.add('active');
+      this.setControlTooltip('expandMapText', 'Contraer mapa');
+      this.setExpandedPanelTab(this.expandedPanelTab || 'capas');
+      window.sincronizarFiltrosExpandido?.();
+
+      // En pantalla completa, capas entra cerrada para una vista limpia.
+      const layerContent = document.getElementById('layerContent');
+      const layerSelector = document.getElementById('layerSelector');
+      const layerIcon = document.getElementById('layerToggleIcon');
+      if (layerContent && layerSelector && layerIcon) {
+        layerContent.classList.add('collapsed');
+        layerSelector.classList.add('collapsed');
+        layerIcon.className = 'fas fa-chevron-down';
+      }
+
+      this.actualizarEstadoPanelLateral();
+      const sidePanels = document.querySelector('.mapa-side-panels');
+      if (sidePanels) sidePanels.scrollTop = 0;
+    } else {
+      body.classList.remove('mapa-expanded-mode');
+      body.classList.remove('mapa-side-collapsed');
+      body.classList.remove('mapa-collapsed-tools-open');
+      if (btnText) btnText.textContent = 'Agrandar Mapa';
+      if (icon) icon.className = 'fas fa-expand';
+      if (btn) btn.classList.remove('active');
+      this.setControlTooltip('expandMapText', 'Agrandar mapa');
+      this.isExpandedSidePanelHidden = false;
+
+      const legendPanel = document.querySelector('.legend-panel');
+      const layerSelector = document.getElementById('layerSelector');
+      const escenariosPanel = document.getElementById('escenariosPanel');
+      if (legendPanel) legendPanel.style.display = '';
+      if (layerSelector) layerSelector.style.display = '';
+      if (escenariosPanel) escenariosPanel.style.display = '';
+      window.collapseEscenariosPanel?.();
+      window.updateCollapsedToolsToggleUI?.();
+
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: this.mapExpandScrollY || 0, behavior: 'auto' });
+      });
+    }
+
+    setTimeout(() => {
+      if (this.map) this.map.invalidateSize(true);
+    }, 220);
   }
 
   centrarMapa() {
@@ -1177,21 +1347,52 @@ class MapaIncidentes {
 
   async descargarMapaImagen() {
     this.mostrarProgreso('Generando imagen PNG...', 'Esto puede tomar unos segundos');
-    
-    const controls = document.querySelector('.map-controls');
-    const legend = document.querySelector('.legend-panel');
-    const layerSelector = document.querySelector('.layer-selector');
-    
-    const elementsToHide = [controls, legend, layerSelector].filter(el => el);
-    elementsToHide.forEach(el => el.style.display = 'none');
 
-    try {
-      const canvas = await html2canvas(document.getElementById('mapaIncidentes'), {
+    const isExpanded = document.body.classList.contains('mapa-expanded-mode');
+    const targetElement = isExpanded
+      ? document.getElementById('mapaIncidentes')
+      : document.querySelector('.mapa-layout');
+
+    const capturarCanvasMapa = async () => {
+      await new Promise(resolve => requestAnimationFrame(() => resolve()));
+      if (this.map) this.map.invalidateSize(true);
+      await new Promise(resolve => setTimeout(resolve, 120));
+
+      if (!targetElement) {
+        throw new Error('No se encontró el contenedor a capturar');
+      }
+
+      return html2canvas(targetElement, {
         useCORS: true,
         allowTaint: false,
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false
       });
+    };
+
+    try {
+      let canvas;
+      const zonasEstabanActivas = this.showZonasPeligrosas && this.map && this.map.hasLayer(this.zonasLayer);
+
+      try {
+        canvas = await capturarCanvasMapa();
+      } catch (primaryError) {
+        if (!zonasEstabanActivas) {
+          throw primaryError;
+        }
+
+        // Fallback: algunas capas vectoriales pueden fallar en html2canvas.
+        this.map.removeLayer(this.zonasLayer);
+        await new Promise(resolve => setTimeout(resolve, 120));
+
+        try {
+          canvas = await capturarCanvasMapa();
+          this.mostrarNotificacion('PNG generado sin superposición temporal de zonas', 'warning', 2500);
+        } finally {
+          this.zonasLayer.addTo(this.map);
+        }
+      }
 
       const link = document.createElement('a');
       const currentDate = new Date().toISOString().slice(0, 10);
@@ -1206,7 +1407,6 @@ class MapaIncidentes {
       console.error('Error al generar imagen:', error);
       this.mostrarNotificacion('❌ Error al generar imagen', 'error');
     } finally {
-      elementsToHide.forEach(el => el.style.display = '');
       this.ocultarProgreso();
     }
   }
@@ -1460,10 +1660,12 @@ class MapaIncidentes {
   poblarFiltros() {
     const municipios = [...new Set(this.allIncidentsData.map(row => row[this.COLUMNAS.MUNICIPIO]).filter(m => m))].sort();
     const selectMunicipio = document.getElementById('filtroMunicipio');
+    const expMunicipio = document.getElementById('expFiltroMunicipio');
     
     if (selectMunicipio) {
       const valorActual = selectMunicipio.value;
       selectMunicipio.innerHTML = '<option value="">Todos los municipios</option>';
+      if (expMunicipio) expMunicipio.innerHTML = '<option value="">Todos los municipios</option>';
       
       municipios.forEach(municipio => {
         const option = document.createElement('option');
@@ -1472,11 +1674,16 @@ class MapaIncidentes {
         const count = this.allIncidentsData.filter(row => row[this.COLUMNAS.MUNICIPIO] === municipio).length;
         option.textContent = `${municipio} (${count})`;
         
-        selectMunicipio.appendChild(option);
+        selectMunicipio.appendChild(option.cloneNode(true));
+        if (expMunicipio) expMunicipio.appendChild(option);
       });
       
       if (valorActual && municipios.includes(valorActual)) {
         selectMunicipio.value = valorActual;
+      }
+      if (expMunicipio) {
+        const valorExpandido = this.currentMunicipioFilter || '';
+        expMunicipio.value = municipios.includes(valorExpandido) ? valorExpandido : '';
       }
     }
   }
@@ -1484,6 +1691,11 @@ class MapaIncidentes {
   bindEvents() {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (this.isMapExpanded) {
+          this.toggleMapExpand();
+          return;
+        }
+
         const modals = document.querySelectorAll('.modal-overlay');
         modals.forEach(modal => {
           if (modal.style.display === 'flex') {
@@ -1544,6 +1756,74 @@ window.toggleLayerSelector = function() {
   }
 };
 
+window.toggleEscenariosPanel = function() {
+  if (!document.body.classList.contains('mapa-expanded-mode')) return;
+  const panel = document.getElementById('escenariosPanel');
+  const icon = document.getElementById('escenariosDrawerIcon');
+  const btn = document.getElementById('escenariosDrawerBtn');
+  if (!panel || !icon || !btn) return;
+
+  const isCollapsed = panel.classList.contains('collapsed');
+
+  if (isCollapsed) {
+    panel.classList.remove('collapsed');
+    document.body.classList.add('mapa-scenarios-open');
+    icon.className = 'fas fa-chevron-down';
+    btn.classList.add('active');
+    btn.setAttribute('title', 'Ocultar escenarios rápidos');
+    btn.setAttribute('aria-label', 'Ocultar escenarios rápidos');
+    btn.setAttribute('data-tooltip', 'Ocultar escenarios rápidos');
+  } else {
+    panel.classList.add('collapsed');
+    document.body.classList.remove('mapa-scenarios-open');
+    icon.className = 'fas fa-chevron-up';
+    btn.classList.remove('active');
+    btn.setAttribute('title', 'Mostrar escenarios rápidos');
+    btn.setAttribute('aria-label', 'Mostrar escenarios rápidos');
+    btn.setAttribute('data-tooltip', 'Escenarios rápidos');
+  }
+};
+
+window.collapseEscenariosPanel = function() {
+  const panel = document.getElementById('escenariosPanel');
+  const icon = document.getElementById('escenariosDrawerIcon');
+  const btn = document.getElementById('escenariosDrawerBtn');
+  if (!panel || !icon || !btn) return;
+  panel.classList.add('collapsed');
+  document.body.classList.remove('mapa-scenarios-open');
+  icon.className = 'fas fa-chevron-up';
+  btn.classList.remove('active');
+  btn.setAttribute('title', 'Mostrar escenarios rápidos');
+  btn.setAttribute('aria-label', 'Mostrar escenarios rápidos');
+  btn.setAttribute('data-tooltip', 'Escenarios rápidos');
+};
+
+window.updateCollapsedToolsToggleUI = function() {
+  const body = document.body;
+  const icon = document.getElementById('collapsedToolsToggleIcon');
+  const btn = document.getElementById('collapsedToolsToggleBtn');
+  if (!icon || !btn) return;
+
+  const isOpen = body.classList.contains('mapa-collapsed-tools-open');
+  icon.className = isOpen ? 'fas fa-angles-right' : 'fas fa-angles-left';
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('title', isOpen ? 'Ocultar acciones' : 'Mostrar acciones');
+  btn.setAttribute('aria-label', isOpen ? 'Ocultar acciones' : 'Mostrar acciones');
+  btn.setAttribute('data-tooltip', isOpen ? 'Ocultar acciones' : 'Mostrar acciones');
+};
+
+window.toggleCollapsedQuickActions = function() {
+  const body = document.body;
+  if (!body.classList.contains('mapa-expanded-mode') || !body.classList.contains('mapa-side-collapsed')) return;
+  body.classList.toggle('mapa-collapsed-tools-open');
+  window.updateCollapsedToolsToggleUI();
+};
+
+
+window.setExpandedPanelTab = function(tabKey) {
+  if (mapaInstance) mapaInstance.setExpandedPanelTab(tabKey);
+};
+
 window.filterByType = function(type) {
   if (mapaInstance) mapaInstance.filterByType(type);
 };
@@ -1564,6 +1844,14 @@ window.toggleZonasPeligrosas = function() {
   if (mapaInstance) mapaInstance.toggleZonasPeligrosas();
 };
 
+window.toggleMapExpand = function() {
+  if (mapaInstance) mapaInstance.toggleMapExpand();
+};
+
+window.toggleExpandedSidePanel = function() {
+  if (mapaInstance) mapaInstance.toggleExpandedSidePanel();
+};
+
 window.centrarMapa = function() {
   if (mapaInstance) mapaInstance.centrarMapa();
 };
@@ -1580,26 +1868,87 @@ window.descargarMapa = function(formato) {
   if (mapaInstance) mapaInstance.descargarMapa(formato);
 };
 
-window.cambiarTipoPeriodo = function() {
+window.sincronizarFiltrosExpandido = function() {
+  const tipoBase = document.getElementById('tipoPeriodo');
+  const periodoBase = document.getElementById('selectorPeriodo');
+  const municipioBase = document.getElementById('filtroMunicipio');
+  const minBase = document.getElementById('minFallecidos');
+
+  const tipoExp = document.getElementById('expTipoPeriodo');
+  const periodoExp = document.getElementById('expSelectorPeriodo');
+  const municipioExp = document.getElementById('expFiltroMunicipio');
+  const minExp = document.getElementById('expMinFallecidos');
+
+  if (tipoBase && tipoExp) tipoExp.value = tipoBase.value;
+  if (municipioBase && municipioExp) municipioExp.value = municipioBase.value;
+  if (minBase && minExp) minExp.value = minBase.value;
+  if (periodoBase && periodoExp) periodoExp.value = periodoBase.value;
+};
+
+window.cambiarTipoPeriodo = function(source = 'base') {
   if (!mapaInstance) return;
   
-  const tipoPeriodo = document.getElementById('tipoPeriodo')?.value || 'todos';
+  const tipoPeriodo = source === 'expanded'
+    ? (document.getElementById('expTipoPeriodo')?.value || 'todos')
+    : (document.getElementById('tipoPeriodo')?.value || 'todos');
+
+  const tipoBase = document.getElementById('tipoPeriodo');
+  const tipoExp = document.getElementById('expTipoPeriodo');
+  if (tipoBase && tipoExp) {
+    tipoBase.value = tipoPeriodo;
+    tipoExp.value = tipoPeriodo;
+  }
+
   mapaInstance.tipoPeriodoFilter = tipoPeriodo;
   
   if (tipoPeriodo === 'todos') {
     mapaInstance.periodoSeleccionado = '';
+    const periodoBase = document.getElementById('selectorPeriodo');
+    const periodoExp = document.getElementById('expSelectorPeriodo');
+    if (periodoBase) periodoBase.value = '';
+    if (periodoExp) periodoExp.value = '';
     mapaInstance.aplicarFiltros();
   } else {
     mapaInstance.actualizarSelectorPeriodo();
   }
 };
 
-window.aplicarFiltrosAvanzados = function() {
+window.aplicarFiltrosAvanzados = function(source = 'base') {
   if (!mapaInstance) return;
-  
-  mapaInstance.currentMunicipioFilter = document.getElementById('filtroMunicipio')?.value || '';
-  mapaInstance.currentFallecidosFilter = parseInt(document.getElementById('minFallecidos')?.value || 0);
-  mapaInstance.periodoSeleccionado = document.getElementById('selectorPeriodo')?.value || '';
+
+  const municipio = source === 'expanded'
+    ? (document.getElementById('expFiltroMunicipio')?.value || '')
+    : (document.getElementById('filtroMunicipio')?.value || '');
+  const fallecidos = source === 'expanded'
+    ? parseInt(document.getElementById('expMinFallecidos')?.value || 0)
+    : parseInt(document.getElementById('minFallecidos')?.value || 0);
+  const periodo = source === 'expanded'
+    ? (document.getElementById('expSelectorPeriodo')?.value || '')
+    : (document.getElementById('selectorPeriodo')?.value || '');
+
+  const baseMunicipio = document.getElementById('filtroMunicipio');
+  const expMunicipio = document.getElementById('expFiltroMunicipio');
+  const baseFallecidos = document.getElementById('minFallecidos');
+  const expFallecidos = document.getElementById('expMinFallecidos');
+  const basePeriodo = document.getElementById('selectorPeriodo');
+  const expPeriodo = document.getElementById('expSelectorPeriodo');
+
+  if (baseMunicipio && expMunicipio) {
+    baseMunicipio.value = municipio;
+    expMunicipio.value = municipio;
+  }
+  if (baseFallecidos && expFallecidos) {
+    baseFallecidos.value = String(fallecidos);
+    expFallecidos.value = String(fallecidos);
+  }
+  if (basePeriodo && expPeriodo) {
+    basePeriodo.value = periodo;
+    expPeriodo.value = periodo;
+  }
+
+  mapaInstance.currentMunicipioFilter = municipio;
+  mapaInstance.currentFallecidosFilter = fallecidos;
+  mapaInstance.periodoSeleccionado = periodo;
   
   mapaInstance.aplicarFiltros();
 };
@@ -1608,14 +1957,26 @@ window.limpiarFiltrosAvanzados = function() {
   if (!mapaInstance) return;
   
   const tipoPeriodoEl = document.getElementById('tipoPeriodo');
+  const expTipoPeriodoEl = document.getElementById('expTipoPeriodo');
   const filtroMunicipioEl = document.getElementById('filtroMunicipio');
+  const expFiltroMunicipioEl = document.getElementById('expFiltroMunicipio');
   const minFallecidosEl = document.getElementById('minFallecidos');
+  const expMinFallecidosEl = document.getElementById('expMinFallecidos');
   const selectorPeriodoContainer = document.getElementById('selectorPeriodoContainer');
+  const expSelectorPeriodoContainer = document.getElementById('expSelectorPeriodoContainer');
+  const selectorPeriodoEl = document.getElementById('selectorPeriodo');
+  const expSelectorPeriodoEl = document.getElementById('expSelectorPeriodo');
   
   if (tipoPeriodoEl) tipoPeriodoEl.value = 'todos';
+  if (expTipoPeriodoEl) expTipoPeriodoEl.value = 'todos';
   if (filtroMunicipioEl) filtroMunicipioEl.value = '';
+  if (expFiltroMunicipioEl) expFiltroMunicipioEl.value = '';
   if (minFallecidosEl) minFallecidosEl.value = '0';
+  if (expMinFallecidosEl) expMinFallecidosEl.value = '0';
   if (selectorPeriodoContainer) selectorPeriodoContainer.style.display = 'none';
+  if (expSelectorPeriodoContainer) expSelectorPeriodoContainer.style.display = 'none';
+  if (selectorPeriodoEl) selectorPeriodoEl.value = '';
+  if (expSelectorPeriodoEl) expSelectorPeriodoEl.value = '';
   
   mapaInstance.tipoPeriodoFilter = 'todos';
   mapaInstance.periodoSeleccionado = '';
@@ -1645,6 +2006,7 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log('📍 Usando columna 43 para coordenadas (CORRECTO)');
   
   try {
+    document.body.classList.remove('mapa-expanded-mode', 'mapa-side-collapsed');
     mapaInstance = new MapaIncidentes();
 
     const legendContent = document.getElementById('legendContent');
@@ -1664,6 +2026,8 @@ document.addEventListener("DOMContentLoaded", function () {
       layerSelector.classList.add('collapsed');
       layerIcon.className = 'fas fa-chevron-down';
     }
+
+    window.sincronizarFiltrosExpandido?.();
 
     mapaInstance.cargarDatosMapaCalor(false);
     
