@@ -114,6 +114,7 @@
               <option value="todos">Todos los períodos</option>
               <option value="mensual">Mensual</option>
               <option value="trimestral">Trimestral</option>
+              <option value="anual">Anual</option>
             </select>
           </div>
           
@@ -130,7 +131,7 @@
               <option value="">Todos los municipios</option>
             </select>
           </div>
-          
+
           <div class="filtro-grupo">
             <label><i class="fas fa-skull"></i> Fallecidos Mínimos</label>
             <input type="number" id="minFallecidos" min="0" value="0" 
@@ -145,17 +146,64 @@
         </div>
       </div>
       
-      <div class="mapa-layout">
-        <div class="mapa-side-panels">
-        
+        <div class="mapa-layout">
+        <div class="expanded-topbar">
+          <div class="expanded-topbar-brand">
+            <img src="logo-smyt.png" alt="Logo" class="expanded-topbar-logo">
+            <span class="expanded-topbar-title">Visor Geográfico de Incidentes</span>
+          </div>
+          <button class="expanded-topbar-exit" type="button" onclick="toggleMapExpand()" title="Salir de pantalla completa" aria-label="Salir de pantalla completa">
+            <i class="fas fa-compress-arrows-alt"></i>
+          </button>
+        </div>
+        <div class="mapa-side-panels" data-expanded-tab="capas">
+          <button class="panel-collapse-btn" type="button" onclick="toggleExpandedSidePanel()" title="Ocultar panel" aria-label="Ocultar panel">
+            <i class="fas fa-chevron-left" id="panelCollapseIcon"></i>
+          </button>
+        <div class="expanded-filters-panel" id="expandedFiltersPanel">
+          <div class="expanded-filters-title">
+            <i class="fas fa-filter"></i>
+            Filtros Avanzados
+          </div>
+          <div class="expanded-filters-grid">
+            <div class="expanded-filter-group">
+              <label>Tipo de periodo</label>
+              <select id="expTipoPeriodo" onchange="cambiarTipoPeriodo('expanded')">
+                <option value="todos">Todos los períodos</option>
+                <option value="mensual">Mensual</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </div>
+            <div class="expanded-filter-group" id="expSelectorPeriodoContainer" style="display:none;">
+              <label>Periodo</label>
+              <select id="expSelectorPeriodo" onchange="aplicarFiltrosAvanzados('expanded')">
+                <option value="">Todos los períodos</option>
+              </select>
+            </div>
+            <div class="expanded-filter-group">
+              <label>Municipio</label>
+              <select id="expFiltroMunicipio" onchange="aplicarFiltrosAvanzados('expanded')">
+                <option value="">Todos los municipios</option>
+              </select>
+            </div>
+            <div class="expanded-filter-group">
+              <label>Fallecidos mín.</label>
+              <input type="number" id="expMinFallecidos" min="0" value="0" onchange="aplicarFiltrosAvanzados('expanded')" placeholder="0">
+            </div>
+            <button class="expanded-filter-clear" type="button" onclick="limpiarFiltrosAvanzados()">
+              <i class="fas fa-eraser"></i> Limpiar
+            </button>
+          </div>
+        </div>
         <!-- Leyenda Interactiva -->
         <div class="legend-panel collapsed">
-          <div class="legend-header">
+          <div class="legend-header" role="button" tabindex="0" onclick="toggleLegend()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLegend();}">
             <div class="legend-title">
               <i class="fas fa-list"></i>
               Causa del Siniestro
             </div>
-            <button class="legend-toggle" onclick="toggleLegend()">
+            <button class="legend-toggle" type="button" onclick="event.stopPropagation();toggleLegend()">
               <i class="fas fa-chevron-down" id="legendToggleIcon"></i>
             </button>
           </div>
@@ -211,12 +259,12 @@
 
         <!-- Selector de Capas -->
         <div class="layer-selector collapsed" id="layerSelector">
-          <div class="layer-header">
+          <div class="layer-header" role="button" tabindex="0" onclick="toggleLayerSelector()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLayerSelector();}">
             <div class="layer-title-container">
               <i class="fas fa-layer-group"></i>
               <span>Capas del Mapa</span>
             </div>
-            <button class="layer-toggle" onclick="toggleLayerSelector()">
+            <button class="layer-toggle" type="button" onclick="event.stopPropagation();toggleLayerSelector()">
               <i class="fas fa-chevron-down" id="layerToggleIcon"></i>
             </button>
           </div>
@@ -229,7 +277,7 @@
                 <div class="layer-title">Comunitario</div>
                 <div class="layer-description">Mapa base estándar</div>
               </div>
-              
+
               <div class="layer-option" data-layer="hot" onclick="changeMapLayer('hot', this)">
                 <div class="layer-thumb layer-thumb-hot">
                   <span class="layer-thumb-badge"><i class="fas fa-exclamation-triangle"></i></span>
@@ -261,34 +309,68 @@
                 <div class="layer-title">Google Satelite</div>
                 <div class="layer-description">Imagen satelital</div>
               </div>
+
             </div>
+          </div>
+        </div>
+
+        <div class="escenarios-panel collapsed" id="escenariosPanel">
+          <div class="escenarios-grid" id="escenariosGrid">
+            <button class="escenario-btn" type="button" onclick="toggleHeatmapView()">
+              <i class="fas fa-fire"></i> Mapa de calor
+            </button>
+            <button class="escenario-btn" type="button" onclick="toggleMarkersView()">
+              <i class="fas fa-map-pin"></i> Marcadores
+            </button>
+            <button class="escenario-btn" type="button" onclick="toggleZonasPeligrosas()">
+              <i class="fas fa-exclamation-circle"></i> Zonas peligrosas
+            </button>
+            <button class="escenario-btn" type="button" onclick="centrarMapa()">
+              <i class="fas fa-crosshairs"></i> Centrar mapa
+            </button>
+            <button class="escenario-btn" type="button" onclick="toggleMapExpand()">
+              <i class="fas fa-compress"></i> Contraer mapa
+            </button>
+            <button class="escenario-btn" type="button" onclick="mostrarModalDescarga()">
+              <i class="fas fa-download"></i> Descargar datos
+            </button>
           </div>
         </div>
 
         </div>
 
-        <div id="mapaIncidentes">
+        <div class="mapa-canvas-shell">
+          <div id="mapaIncidentes"></div>
+          <button class="map-expand-fab" type="button" onclick="toggleMapExpand()" title="Agrandar mapa" aria-label="Agrandar mapa">
+            <i class="fas fa-expand-arrows-alt"></i>
+            <span>Agrandar</span>
+          </button>
+        </div>
+
         <!-- Controles del Mapa -->
-        <div class="map-controls">
-          <button class="map-control-btn" onclick="toggleHeatmapView()">
+        <div class="map-controls map-controls-bar">
+          <button class="map-control-btn collapsed-tools-toggle" data-tooltip="Mostrar acciones" onclick="toggleCollapsedQuickActions()" title="Mostrar acciones" aria-label="Mostrar acciones" id="collapsedToolsToggleBtn">
+            <i class="fas fa-angles-left" id="collapsedToolsToggleIcon"></i>
+          </button>
+          <button class="map-control-btn" data-tooltip="Mapa de calor" onclick="toggleHeatmapView()" title="Alternar mapa de calor" aria-label="Alternar mapa de calor">
             <i class="fas fa-fire"></i>
             <span id="heatmapText">Ocultar Mapa de Calor</span>
           </button>
-          <button class="map-control-btn" onclick="toggleMarkersView()">
+          <button class="map-control-btn" data-tooltip="Marcadores" onclick="toggleMarkersView()" title="Alternar marcadores" aria-label="Alternar marcadores">
             <i class="fas fa-map-pin"></i>
             <span id="markersText">Ocultar Marcadores</span>
           </button>
-          <button class="map-control-btn" onclick="toggleZonasPeligrosas()">
+          <button class="map-control-btn" data-tooltip="Zonas peligrosas" onclick="toggleZonasPeligrosas()" title="Alternar zonas peligrosas" aria-label="Alternar zonas peligrosas">
             <i class="fas fa-exclamation-circle"></i>
             <span id="zonasText">Mostrar Zonas Peligrosas</span>
           </button>
-          <button class="map-control-btn" onclick="centrarMapa()">
+          <button class="map-control-btn" data-tooltip="Centrar mapa" onclick="centrarMapa()" title="Centrar mapa" aria-label="Centrar mapa">
             <i class="fas fa-crosshairs"></i>
-            Centrar Mapa
+            <span>Centrar Mapa</span>
           </button>
-          <button class="map-control-btn" onclick="mostrarModalDescarga()">
+          <button class="map-control-btn download-btn" data-tooltip="Descargar datos" onclick="mostrarModalDescarga()" title="Descargar datos" aria-label="Descargar datos">
             <i class="fas fa-download"></i>
-            Descargar Datos
+            <span>Descargar Datos</span>
           </button>
         </div>
       </div>
@@ -388,5 +470,7 @@
 </body>
 
 </html>
+
+
 
 
